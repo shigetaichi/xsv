@@ -61,10 +61,10 @@ func getStructInfo(rType reflect.Type) *structInfo {
 }
 
 func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []string) []fieldInfo {
-	return getFieldInfosWithTagName(rType, parentIndexChain, parentKeys, TagName)
+	return getFieldInfosWithTagName(rType, parentIndexChain, parentKeys, TagName, TagSeparator)
 }
 
-func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parentKeys []string, tagName string) []fieldInfo {
+func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parentKeys []string, tagName, tagSeparator string) []fieldInfo {
 	fieldsCount := rType.NumField()
 	fieldsList := make([]fieldInfo, 0, fieldsCount)
 	for i := 0; i < fieldsCount; i++ {
@@ -80,7 +80,7 @@ func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parent
 		var currFieldInfo *fieldInfo
 		if !field.Anonymous {
 			filteredTags := []string{}
-			currFieldInfo, filteredTags = filterTags(tagName, indexChain, field)
+			currFieldInfo, filteredTags = filterTags(tagName, indexChain, field, tagSeparator)
 
 			if len(filteredTags) == 1 && filteredTags[0] == "-" {
 				// ignore nested structs with - tag
@@ -196,11 +196,11 @@ func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parent
 	return fieldsList
 }
 
-func filterTags(tagName string, indexChain []int, field reflect.StructField) (*fieldInfo, []string) {
+func filterTags(tagName string, indexChain []int, field reflect.StructField, tagSeparator string) (*fieldInfo, []string) {
 	currFieldInfo := fieldInfo{IndexChain: indexChain}
 
 	fieldTag := field.Tag.Get(tagName)
-	fieldTags := strings.Split(fieldTag, TagSeparator)
+	fieldTags := strings.Split(fieldTag, tagSeparator)
 
 	filteredTags := []string{}
 	for _, fieldTagEntry := range fieldTags {
