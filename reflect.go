@@ -61,6 +61,10 @@ func getStructInfo(rType reflect.Type) *structInfo {
 }
 
 func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []string) []fieldInfo {
+	return getFieldInfosWithTagName(rType, parentIndexChain, parentKeys, TagName)
+}
+
+func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parentKeys []string, tagName string) []fieldInfo {
 	fieldsCount := rType.NumField()
 	fieldsList := make([]fieldInfo, 0, fieldsCount)
 	for i := 0; i < fieldsCount; i++ {
@@ -76,7 +80,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 		var currFieldInfo *fieldInfo
 		if !field.Anonymous {
 			filteredTags := []string{}
-			currFieldInfo, filteredTags = filterTags(TagName, indexChain, field)
+			currFieldInfo, filteredTags = filterTags(tagName, indexChain, field)
 
 			if len(filteredTags) == 1 && filteredTags[0] == "-" {
 				// ignore nested structs with - tag

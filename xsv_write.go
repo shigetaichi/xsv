@@ -67,8 +67,9 @@ func (x *XSVWrite[T]) Write(writer *csv.Writer) error {
 		return err
 	}
 
-	inInnerStructInfo := getStructInfoNoCache(inInnerType) // Get the inner struct info to get CSV annotations
-	//inInnerStructInfo.Fields = getFilteredFields(inInnerStructInfo.Fields, removeFieldsIndexes) // Filtered out ignoreFields from all fields
+	fieldsList := getFieldInfosWithTagName(inInnerType, []int{}, []string{}, x.GetTagName()) // Get the inner struct info to get CSV annotations
+	inInnerStructInfo := &structInfo{fieldsList}
+
 	inInnerStructInfo.Fields = getPickedFields(inInnerStructInfo.Fields, x.selectedColumnIndex) // Filter Fields from all fields
 
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
