@@ -7,12 +7,11 @@ import (
 
 type XSVWrite[T any] struct {
 	Data                StructSlice[T]
-	tagName             string
-	tagSeparator        string
-	fieldsCombiner      string
-	selectedColumnIndex []int
-	ColumnSorter        ColumnSorter
+	TagName             string
+	TagSeparator        string
 	OmitHeaders         bool
+	SelectedColumnIndex []int
+	ColumnSorter        ColumnSorter
 }
 type ColumnSorter = func(row []string) []string
 
@@ -20,46 +19,18 @@ func NewXSVWrite[T any](
 	data StructSlice[T],
 ) XSVWrite[T] {
 	return XSVWrite[T]{
-		Data:           data,
-		tagName:        "csv",
-		tagSeparator:   ",",
-		fieldsCombiner: ".",
+		Data:                data,
+		TagName:             "csv",
+		TagSeparator:        ",",
+		OmitHeaders:         false,
+		SelectedColumnIndex: make([]int, 0),
 		ColumnSorter: func(row []string) []string {
 			return row
 		},
 	}
 }
 
-func (x *XSVWrite[T]) GetTagName() string {
-	return x.tagName
-}
-func (x *XSVWrite[T]) SetTagName(tagName string) {
-	x.tagName = tagName
-}
-
-func (x *XSVWrite[T]) GetTagSeparator() string {
-	return x.tagSeparator
-}
-func (x *XSVWrite[T]) SetTagSeparator(tagSeparator string) {
-	x.tagSeparator = tagSeparator
-}
-
-func (x *XSVWrite[T]) GetFieldsCombiner() string {
-	return x.fieldsCombiner
-}
-func (x *XSVWrite[T]) SetFieldsCombiner(fieldsCombiner string) {
-	x.fieldsCombiner = fieldsCombiner
-}
-
-func (x *XSVWrite[T]) GetColumnIndex() []int {
-	return x.selectedColumnIndex
-}
-func (x *XSVWrite[T]) SetColumnIndex(colIndex []int) {
-	x.selectedColumnIndex = colIndex
-}
-
 func (x *XSVWrite[T]) Write(writer *csv.Writer) error {
-	//TODO: colIndex = changeToSequence(colIndex) // ColumnSorterで各自の実装に任せるってことになりそう
 	inValue, inType := getConcreteReflectValueAndType(x.Data) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
 
 	inInnerWasPointer, inInnerType := getConcreteContainerInnerType(inType) // Get the concrete inner type (not pointer) (Container<"?">)
@@ -67,10 +38,10 @@ func (x *XSVWrite[T]) Write(writer *csv.Writer) error {
 		return err
 	}
 
-	fieldsList := getFieldInfosWithTagName(inInnerType, []int{}, []string{}, x.GetTagName(), x.GetTagSeparator()) // Get the inner struct info to get CSV annotations
+	fieldsList := getFieldInfosWithTagName(inInnerType, []int{}, []string{}, x.TagName, x.TagSeparator) // Get the inner struct info to get CSV annotations
 	inInnerStructInfo := &structInfo{fieldsList}
 
-	inInnerStructInfo.Fields = getPickedFields(inInnerStructInfo.Fields, x.selectedColumnIndex) // Filter Fields from all fields
+	inInnerStructInfo.Fields = getPickedFields(inInnerStructInfo.Fields, x.SelectedColumnIndex) // Filter Fields from all fields
 
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
