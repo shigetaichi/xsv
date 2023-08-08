@@ -79,7 +79,9 @@ func writeFromChan(writer CSVWriter, c <-chan interface{}, omitHeaders bool, rem
 func writeTo(writer CSVWriter, in interface{}, omitHeaders bool, removeFieldsIndexes []int, colIndex []int) error {
 	colIndex = changeToSequence(colIndex)
 	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-
+	if err := ensureInType(inType); err != nil {
+		return err
+	}
 	inInnerWasPointer, inInnerType := getConcreteContainerInnerType(inType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureInInnerType(inInnerType); err != nil {
 		return err
