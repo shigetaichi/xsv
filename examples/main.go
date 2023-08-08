@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gocarina/gocsv"
 	"os"
+	"sync"
 	"time"
 	"xsv"
 )
@@ -50,14 +52,6 @@ func (date *DateTime) UnmarshalCSV(csv string) (err error) {
 }
 
 func main() {
-
-	// Create an empty clients file
-	clientsFile, err := os.OpenFile("clients.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
-	defer clientsFile.Close()
-
 	// Create clients
 	clients := []*Client{
 		{ID: "12", Name: "John", Age: "21",
@@ -81,9 +75,48 @@ func main() {
 			Employed: DateTime{time.Date(2022, 11, 04, 15, 0, 0, 0, time.UTC)},
 		},
 	}
-	xsvWrite := xsv.NewXSVWrite[*Client](clients)
+	// Create an empty clients file
+	clientsFile, err := os.OpenFile("clients.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	defer clientsFile.Close()
 
+	xsvWrite := xsv.NewXSVWrite[*Client](clients)
 	err = xsvWrite.WriteToFile(clientsFile)
+	if err != nil {
+		return
+	}
+
+	// WriteFromChan
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		i := i + 1
+		go func() {
+			defer wg.Done()
+			v := Client{
+				ID: fmt.Sprintf("%v", i), Name: "Danny",
+				Address1: Address{"State Street 1", "City1"},
+				Address2: Address{"State Street 2", "City2"},
+				Employed: DateTime{time.Date(2022, 11, 04, 15, 0, 0, 0, time.UTC)},
+			}
+			xsvWrite.DataChan <- &v
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(xsvWrite.DataChan)
+	}()
+
+	// Create an empty clientsFromChan file
+	clientsFromChanFile, err := os.OpenFile("clients-from-chan.csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	defer clientsFile.Close()
+	err = xsvWrite.WriteFromChanToFile(clientsFromChanFile)
 	if err != nil {
 		return
 	}
