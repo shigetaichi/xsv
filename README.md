@@ -49,8 +49,8 @@ func main() {
 	}
 	defer clientsFile.Close()
 	
-	xsvWrite := xsv.NewXSVWrite[*Client](clients)
-	err = xsvWrite.WriteToFile(clientsFile)
+	xsvWrite := xsv.NewXSVWrite[*Client]()
+	err = xsvWrite.SetFileWriter(clientsFile).Write(clients)
 	if err != nil {
 		return
 	}
