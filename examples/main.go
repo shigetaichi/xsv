@@ -82,14 +82,15 @@ func main() {
 	}
 	defer clientsFile.Close()
 
-	xsvWrite := xsv.NewXSVWrite[*Client](clients)
-	err = xsvWrite.WriteToFile(clientsFile)
+	xsvWrite := xsv.NewXSVWrite[*Client]()
+	err = xsvWrite.SetFileWriter(clientsFile).Write(clients)
 	if err != nil {
 		return
 	}
 
 	// WriteFromChan
 	var wg sync.WaitGroup
+	clientsChan := make(chan *Client)
 	for i := 0; i < 100; i++ {
 		wg.Add(1)
 		i := i + 1
@@ -101,13 +102,13 @@ func main() {
 				Address2: Address{"State Street 2", "City2"},
 				Employed: DateTime{time.Date(2022, 11, 04, 15, 0, 0, 0, time.UTC)},
 			}
-			xsvWrite.DataChan <- &v
+			clientsChan <- &v
 		}()
 	}
 
 	go func() {
 		wg.Wait()
-		close(xsvWrite.DataChan)
+		close(clientsChan)
 	}()
 
 	// Create an empty clientsFromChan file
@@ -116,8 +117,11 @@ func main() {
 		panic(err)
 	}
 	defer clientsFile.Close()
-	err = xsvWrite.WriteFromChanToFile(clientsFromChanFile)
+
+	f := xsvWrite.SetFileWriter(clientsFromChanFile)
+	f.OmitHeaders = true
+	err = f.WriteFromChan(clientsChan)
 	if err != nil {
-		return
+		panic(err)
 	}
 }

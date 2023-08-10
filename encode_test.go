@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
-	"io"
 	"io/ioutil"
 	"math"
 	"reflect"
@@ -342,7 +341,7 @@ func Test_writeTo_embedmarshalCSV(t *testing.T) {
 
 	colIndex := generateFakeColIndex(2)
 
-	// Next, attempt to write our test data to a CSV format
+	// Next, attempt to Write our test data to a CSV format
 	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
 		t.Fatal(err)
 	}
@@ -445,18 +444,20 @@ func Test_writeTo_complex_inner_struct_embed(t *testing.T) {
 func Test_writeToChan(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
-	c := make(chan interface{})
+	xsvWrite := NewXSVWrite[Sample]()
+	xsvWrite.SelectedColumnIndex = generateFakeColIndex(7)
+	sampleChan := make(chan Sample)
 	sptr := "*string"
 	go func() {
 		for i := 0; i < 100; i++ {
 			v := Sample{Foo: "f", Bar: i, Baz: "baz" + strconv.Itoa(i), Frop: float64(i), Blah: nil, SPtr: &sptr}
-			c <- v
+			sampleChan <- v
 		}
-		close(c)
+		close(sampleChan)
 	}()
 
-	colIndex := generateFakeColIndex(7)
-	if err := MarshalChan(c, NewSafeCSVWriter(csv.NewWriter(e.out)), []int{}, colIndex); err != nil {
+	err := xsvWrite.SetWriter(csv.NewWriter(e.out)).WriteFromChan(sampleChan)
+	if err != nil {
 		t.Fatal(err)
 	}
 	lines, err := csv.NewReader(&b).ReadAll()
@@ -478,11 +479,11 @@ func Test_writeToChan(t *testing.T) {
 func Test_MarshalChan_ClosedChannel(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
-	c := make(chan interface{})
-	close(c)
+	xsvWrite := NewXSVWrite[Sample]()
+	sampleChan := make(chan Sample)
+	close(sampleChan)
 
-	colIndex := generateFakeColIndex(7)
-	if err := MarshalChan(c, NewSafeCSVWriter(csv.NewWriter(e.out)), []int{}, colIndex); !errors.Is(err, ErrChannelIsClosed) {
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).WriteFromChan(sampleChan); !errors.Is(err, ErrChannelIsClosed) {
 		t.Fatal(err)
 	}
 }
@@ -494,19 +495,17 @@ func TestRenamedTypesMarshal(t *testing.T) {
 		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
 	}
 
-	SetCSVWriter(func(out io.Writer) *SafeCSVWriter {
-		csvout := NewSafeCSVWriter(csv.NewWriter(out))
-		csvout.Comma = ';'
-		return csvout
-	})
-	// Switch back to default for tests executed after this
-	defer SetCSVWriter(DefaultCSVWriter)
+	xsvWrite := NewXSVWrite[RenamedSample]()
+	//xsvWrite.TagSeparator = ";" // TODO: TagSeparatorは区切り文字ではない
+	xsvWrite.SelectedColumnIndex = generateFakeColIndex(reflect.TypeOf(RenamedSample{}).NumField())
 
-	colIndex := generateFakeColIndex(reflect.TypeOf(RenamedSample{}).NumField())
-	csvContent, err := MarshalString(&samples, []int{}, colIndex)
+	bufferString := bytes.NewBufferString("")
+
+	err := xsvWrite.SetBufferWriter(bufferString).Comma(';').Write(samples)
 	if err != nil {
 		t.Fatal(err)
 	}
+	csvContent := bufferString.String()
 	if csvContent != "foo;bar\n1,4;1.5\n2,3;2.4\n" {
 		t.Fatalf("Error marshaling floats with , as separator. Expected \nfoo;bar\n1,4;1.5\n2,3;2.4\ngot:\n%v", csvContent)
 	}
@@ -516,7 +515,7 @@ func TestRenamedTypesMarshal(t *testing.T) {
 		{RenamedFloatUnmarshaler: 4.2, RenamedFloatDefault: 1.5},
 	}
 
-	_, err = MarshalString(&samples, []int{}, colIndex)
+	err = xsvWrite.SetBufferWriter(bufferString).Comma(';').Write(samples)
 	if _, ok := err.(MarshalError); !ok {
 		t.Fatalf("Expected UnmarshalError, got %v", err)
 	}
@@ -529,17 +528,15 @@ func TestCustomTagSeparatorMarshal(t *testing.T) {
 		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
 	}
 
-	TagSeparator = " | "
-	// Switch back to default tagSeparator after this
-	defer func() {
-		TagSeparator = ","
-	}()
+	xsvWrite := NewXSVWrite[RenamedSample]()
+	xsvWrite.SelectedColumnIndex = generateFakeColIndex(reflect.TypeOf(RenamedSample{}).NumField())
 
-	colIndex := generateFakeColIndex(reflect.TypeOf(RenamedSample{}).NumField())
-	csvContent, err := MarshalString(&samples, []int{}, colIndex)
+	bufferString := bytes.NewBufferString("")
+	err := xsvWrite.SetBufferWriter(bufferString).Comma('|').Write(samples)
 	if err != nil {
 		t.Fatal(err)
 	}
+	csvContent := bufferString.String()
 	if csvContent != "foo|bar\n1,4|1.5\n2,3|2.4\n" {
 		t.Fatalf("Error marshaling floats with , as separator. Expected \nfoo|bar\n1,4|1.5\n2,3|2.4\ngot:\n%v", csvContent)
 	}
@@ -563,11 +560,13 @@ func (e MarshalError) Error() string {
 }
 
 func Benchmark_MarshalCSVWithoutHeaders(b *testing.B) {
-	dst := NewSafeCSVWriter(csv.NewWriter(ioutil.Discard))
 	for n := 0; n < b.N; n++ {
 
-		colIndex := generateFakeColIndex(0)
-		err := MarshalCSVWithoutHeaders([]Sample{{}}, dst, []int{}, colIndex)
+		xsvWrite := NewXSVWrite[Sample]()
+		err := xsvWrite.SetWriter(csv.NewWriter(ioutil.Discard)).Write([]Sample{})
+		if err != nil {
+			return
+		}
 		if err != nil {
 			b.Fatal(err)
 		}

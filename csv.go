@@ -55,33 +55,6 @@ func SetHeaderNormalizer(f Normalizer) {
 }
 
 // --------------------------------------------------------------------------
-// CSVWriter used to format CSV
-
-var selfCSVWriter = DefaultCSVWriter
-
-// DefaultCSVWriter is the default SafeCSVWriter used to format CSV (cf. csv.NewWriter)
-func DefaultCSVWriter(out io.Writer) *SafeCSVWriter {
-	writer := NewSafeCSVWriter(csv.NewWriter(out))
-
-	// As only one rune can be defined as a CSV separator, we are going to trim
-	// the custom tag separator and use the first rune.
-	if runes := []rune(strings.TrimSpace(TagSeparator)); len(runes) > 0 {
-		writer.Comma = runes[0]
-	}
-
-	return writer
-}
-
-// SetCSVWriter sets the SafeCSVWriter used to format CSV.
-func SetCSVWriter(csvWriter func(io.Writer) *SafeCSVWriter) {
-	selfCSVWriter = csvWriter
-}
-
-func getCSVWriter(out io.Writer) *SafeCSVWriter {
-	return selfCSVWriter(out)
-}
-
-// --------------------------------------------------------------------------
 // CSVReader used to parse CSV
 
 var selfCSVReader = DefaultCSVReader
@@ -110,47 +83,6 @@ func getCSVReader(in io.Reader) CSVReader {
 
 // --------------------------------------------------------------------------
 // Marshal functions
-
-// MarshalString returns the CSV string from the interface.
-func MarshalString(in interface{}, removeFieldsIndexes []int, colIndex []int) (out string, err error) {
-	bufferString := bytes.NewBufferString(out)
-	if err := Marshal(in, bufferString, removeFieldsIndexes, colIndex); err != nil {
-		return "", err
-	}
-	return bufferString.String(), nil
-}
-
-// Marshal returns the CSV in writer from the interface.
-func Marshal(in interface{}, out io.Writer, removeFieldsIndexes []int, colIndex []int) (err error) {
-	writer := getCSVWriter(out)
-	return writeTo(writer, in, false, removeFieldsIndexes, colIndex)
-}
-
-// MarshalWithoutHeaders returns the CSV in writer from the interface.
-func MarshalWithoutHeaders(in interface{}, out io.Writer, removeFieldsIndexes []int, colIndex []int) (err error) {
-	writer := getCSVWriter(out)
-	return writeTo(writer, in, true, removeFieldsIndexes, colIndex)
-}
-
-// MarshalChan returns the CSV read from the channel.
-func MarshalChan(c <-chan interface{}, out CSVWriter, removeFieldsIndexes []int, colIndex []int) error {
-	return writeFromChan(out, c, false, removeFieldsIndexes, colIndex)
-}
-
-// MarshalChanWithoutHeaders returns the CSV read from the channel.
-func MarshalChanWithoutHeaders(c <-chan interface{}, out CSVWriter, removeFieldsIndexes []int, colIndex []int) error {
-	return writeFromChan(out, c, true, removeFieldsIndexes, colIndex)
-}
-
-// MarshalCSV returns the CSV in writer from the interface.
-func MarshalCSV(in interface{}, out CSVWriter, removeFieldsIndexes []int, colIndex []int) (err error) {
-	return writeTo(out, in, false, removeFieldsIndexes, colIndex)
-}
-
-// MarshalCSVWithoutHeaders returns the CSV in writer from the interface.
-func MarshalCSVWithoutHeaders(in interface{}, out CSVWriter, removeFieldsIndexes []int, colIndex []int) (err error) {
-	return writeTo(out, in, true, removeFieldsIndexes, colIndex)
-}
 
 // --------------------------------------------------------------------------
 // Unmarshal functions
