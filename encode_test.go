@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"errors"
-	"io/ioutil"
+	"io"
 	"math"
 	"strconv"
 	"strings"
@@ -70,7 +70,10 @@ func Test_writeTo_Time(t *testing.T) {
 	}
 
 	ft := time.Now()
-	ft.UnmarshalText([]byte(lines[0][0]))
+	err = ft.UnmarshalText([]byte(lines[0][0]))
+	if err != nil {
+		return
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -551,7 +554,7 @@ func Benchmark_MarshalCSVWithoutHeaders(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 
 		xsvWrite := NewXSVWrite[Sample]()
-		err := xsvWrite.SetWriter(csv.NewWriter(ioutil.Discard)).Write([]Sample{})
+		err := xsvWrite.SetWriter(csv.NewWriter(io.Discard)).Write([]Sample{})
 		if err != nil {
 			return
 		}
