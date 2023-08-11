@@ -4,10 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/samber/lo"
-	"golang.org/x/exp/slices"
 	"io"
 	"reflect"
-	"sort"
 )
 
 var (
@@ -91,27 +89,4 @@ func getPickedFields(fields []fieldInfo, columnFieldsIndexes []int) []fieldInfo 
 		newFields = fields
 	}
 	return newFields
-}
-
-/*
-Make colIndex consist of sequential numbers starting from 0.
-Ex. [1,2,5,8,0] -> [1,2,3,4,0]
-*/
-func changeToSequence(colIndex []int) []int {
-	copiedColIndex := make([]int, len(colIndex))
-	copy(copiedColIndex, colIndex)
-	sort.Ints(copiedColIndex)
-
-	for i, v := range colIndex {
-		colIndex[i] = slices.Index(copiedColIndex, v)
-	}
-	return colIndex
-}
-
-func reorderColumns(row []string, colIndex []int) []string {
-	newLine := make([]string, len(row))
-	for from, to := range colIndex {
-		newLine[to] = row[from]
-	}
-	return newLine
 }
