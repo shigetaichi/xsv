@@ -18,53 +18,6 @@ type encoder struct {
 	out io.Writer
 }
 
-func newEncoder(out io.Writer) *encoder {
-	return &encoder{out}
-}
-
-func writeTo(writer CSVWriter, in interface{}, omitHeaders bool, removeFieldsIndexes []int, colIndex []int) error {
-	colIndex = changeToSequence(colIndex)
-	inValue, inType := getConcreteReflectValueAndType(in) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := ensureInType(inType); err != nil {
-		return err
-	}
-	inInnerWasPointer, inInnerType := getConcreteContainerInnerType(inType) // Get the concrete inner type (not pointer) (Container<"?">)
-	if err := ensureInInnerType(inInnerType); err != nil {
-		return err
-	}
-
-	inInnerStructInfo := getStructInfoNoCache(inInnerType)                                      // Get the inner struct info to get CSV annotations
-	inInnerStructInfo.Fields = getFilteredFields(inInnerStructInfo.Fields, removeFieldsIndexes) // Filtered out ignoreFields from all fields
-
-	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
-	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to Write the header (first line) in CSV
-		csvHeadersLabels[i] = fieldInfo.getFirstKey()
-	}
-	csvHeadersLabels = reorderColumns(csvHeadersLabels, colIndex)
-	if !omitHeaders {
-		if err := writer.Write(csvHeadersLabels); err != nil {
-			return err
-		}
-	}
-	inLen := inValue.Len()
-	for i := 0; i < inLen; i++ { // Iterate over container rows
-		for j, fieldInfo := range inInnerStructInfo.Fields {
-			csvHeadersLabels[j] = ""
-			inInnerFieldValue, err := getInnerField(inValue.Index(i), inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
-			if err != nil {
-				return err
-			}
-			csvHeadersLabels[j] = inInnerFieldValue
-		}
-		csvHeadersLabels = reorderColumns(csvHeadersLabels, colIndex)
-		if err := writer.Write(csvHeadersLabels); err != nil {
-			return err
-		}
-	}
-	writer.Flush()
-	return writer.Error()
-}
-
 func ensureStructOrPtr(t reflect.Type) error {
 	switch t.Kind() {
 	case reflect.Struct:
@@ -124,20 +77,6 @@ func getInnerField(outInner reflect.Value, outInnerWasPointer bool, index []int)
 		return getInnerField(nextField, nextField.Kind() == reflect.Ptr, index[1:])
 	}
 	return getFieldAsString(oi.FieldByIndex(index))
-}
-
-func getFilteredFields(fields []fieldInfo, removeFieldsIndexes []int) []fieldInfo {
-	var newFields []fieldInfo
-	if len(removeFieldsIndexes) > 0 {
-		for _, field := range fields {
-			if !lo.Contains(removeFieldsIndexes, field.IndexChain[0]) {
-				newFields = append(newFields, field)
-			}
-		}
-	} else {
-		newFields = fields
-	}
-	return newFields
 }
 
 func getPickedFields(fields []fieldInfo, columnFieldsIndexes []int) []fieldInfo {

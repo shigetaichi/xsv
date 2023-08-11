@@ -6,7 +6,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"math"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -24,14 +23,6 @@ func assertLine(t *testing.T, expected, actual []string) {
 	}
 }
 
-func generateFakeColIndex(len int) []int {
-	colIndex := make([]int, len)
-	for i := range colIndex {
-		colIndex[i] = i
-	}
-	return colIndex
-}
-
 func Test_writeTo(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
@@ -42,8 +33,8 @@ func Test_writeTo(t *testing.T) {
 		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
 
-	colIndex := generateFakeColIndex(reflect.TypeOf(Sample{}).NumField())
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[Sample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -67,9 +58,9 @@ func Test_writeTo_Time(t *testing.T) {
 		{Foo: d},
 	}
 
-	colIndex := generateFakeColIndex(reflect.TypeOf(DateTime{}).NumField())
-
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, true, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[DateTime]()
+	xsvWrite.OmitHeaders = true
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -100,8 +91,9 @@ func Test_writeTo_NoHeaders(t *testing.T) {
 		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
 		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
-	colIndex := generateFakeColIndex(reflect.TypeOf(Sample{}).NumField())
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, true, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[Sample]()
+	xsvWrite.OmitHeaders = true
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -123,8 +115,8 @@ func Test_writeTo_multipleTags(t *testing.T) {
 		{Foo: "abc", Bar: 123},
 		{Foo: "def", Bar: 234},
 	}
-	colIndex := generateFakeColIndex(reflect.TypeOf(MultiTagSample{}).NumField())
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[MultiTagSample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -161,8 +153,8 @@ func Test_writeTo_slice(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(reflect.TypeOf(TestType{}).NumField())
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[TestType]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -198,8 +190,8 @@ func Test_writeTo_slice_structs(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(11)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[SliceStructSample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -228,8 +220,8 @@ func Test_writeTo_embed(t *testing.T) {
 			Grault: math.Pi,
 		},
 	}
-	colIndex := generateFakeColIndex(10)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[EmbedSample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -259,8 +251,8 @@ func Test_writeTo_embedptr(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(10)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[EmbedPtrSample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -282,8 +274,8 @@ func Test_writeTo_embedptr_nil(t *testing.T) {
 		{},
 	}
 
-	colIndex := generateFakeColIndex(10)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[EmbedPtrSample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -307,8 +299,8 @@ func Test_writeTo_embedmarshal(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(1)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[EmbedMarshal]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -339,10 +331,9 @@ func Test_writeTo_embedmarshalCSV(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(2)
-
 	// Next, attempt to Write our test data to a CSV format
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[*EmbedMarshalCSV]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -386,8 +377,8 @@ func Test_writeTo_complex_embed(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(11)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), sfs, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[SkipFieldSample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(sfs); err != nil {
 		t.Fatal(err)
 	}
 	lines, err := csv.NewReader(&b).ReadAll()
@@ -429,8 +420,9 @@ func Test_writeTo_complex_inner_struct_embed(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(2)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), sfs, true, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[Level0Struct]()
+	xsvWrite.OmitHeaders = true
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(sfs); err != nil {
 		t.Fatal(err)
 	}
 	lines, err := csv.NewReader(&b).ReadAll()
@@ -445,7 +437,6 @@ func Test_writeToChan(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
 	xsvWrite := NewXSVWrite[Sample]()
-	xsvWrite.SelectedColumnIndex = generateFakeColIndex(7)
 	sampleChan := make(chan Sample)
 	sptr := "*string"
 	go func() {
@@ -496,8 +487,6 @@ func TestRenamedTypesMarshal(t *testing.T) {
 	}
 
 	xsvWrite := NewXSVWrite[RenamedSample]()
-	//xsvWrite.TagSeparator = ";" // TODO: TagSeparatorは区切り文字ではない
-	xsvWrite.SelectedColumnIndex = generateFakeColIndex(reflect.TypeOf(RenamedSample{}).NumField())
 
 	bufferString := bytes.NewBufferString("")
 
@@ -529,7 +518,6 @@ func TestCustomTagSeparatorMarshal(t *testing.T) {
 	}
 
 	xsvWrite := NewXSVWrite[RenamedSample]()
-	xsvWrite.SelectedColumnIndex = generateFakeColIndex(reflect.TypeOf(RenamedSample{}).NumField())
 
 	bufferString := bytes.NewBufferString("")
 	err := xsvWrite.SetBufferWriter(bufferString).Comma('|').Write(samples)
@@ -601,8 +589,8 @@ func Test_writeTo_nested_struct(t *testing.T) {
 		},
 	}
 
-	colIndex := generateFakeColIndex(6)
-	if err := writeTo(NewSafeCSVWriter(csv.NewWriter(e.out)), s, false, []int{}, colIndex); err != nil {
+	xsvWrite := NewXSVWrite[NestedSample]()
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
 
