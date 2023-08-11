@@ -23,7 +23,10 @@ func NewUnmarshaller(reader *csv.Reader, out interface{}) (*Unmarshaller, error)
 	if err != nil {
 		return nil, err
 	}
-	headers = normalizeHeaders(headers)
+
+	for i, h := range headers { // apply normalizer func to headers
+		headers[i] = normalizeName(h)
+	}
 
 	um := &Unmarshaller{reader: reader, outType: reflect.TypeOf(out)}
 	err = validate(um, out, headers)

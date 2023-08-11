@@ -62,10 +62,6 @@ e,BAD_INPUT,b`)
 }
 
 func Test_readToNormalized(t *testing.T) {
-	SetHeaderNormalizer(func(s string) string {
-		return strings.ToLower(s)
-	})
-	defer SetHeaderNormalizer(DefaultNameNormalizer())
 
 	blah := 0
 	sptr := "*string"
@@ -76,7 +72,11 @@ e,3,b,,,`)
 	d := newSimpleDecoderFromReader(b)
 
 	var samples []Sample
-	if err := readTo(d, &samples); err != nil {
+	xsvRead := NewXSVRead[Sample]()
+	xsvRead.NameNormalizer = func(s string) string {
+		return strings.ToLower(s)
+	}
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if len(samples) != 2 {

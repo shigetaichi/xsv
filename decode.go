@@ -120,15 +120,6 @@ func maybeDoubleHeaderNames(headers []string) error {
 	return nil
 }
 
-// apply normalizer func to headers
-func normalizeHeaders(headers []string) []string {
-	out := make([]string, len(headers))
-	for i, h := range headers {
-		out[i] = normalizeName(h)
-	}
-	return out
-}
-
 func readTo(decoder Decoder, out interface{}) error {
 	return readToWithErrorHandler(decoder, nil, out)
 }
@@ -157,7 +148,10 @@ func readToWithErrorHandler(decoder Decoder, errHandler ErrorHandler, out interf
 		return ErrNoStructTags
 	}
 
-	headers := normalizeHeaders(csvRows[0])
+	headers := make([]string, len(csvRows[0]))
+	for i, h := range csvRows[0] { // apply normalizer func to headers
+		headers[i] = normalizeName(h)
+	}
 	body := csvRows[1:]
 
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
@@ -246,7 +240,10 @@ func readEach(decoder SimpleDecoder, c interface{}) error {
 	if err != nil {
 		return err
 	}
-	headers = normalizeHeaders(headers)
+
+	for i, h := range headers { // apply normalizer func to headers
+		headers[i] = normalizeName(h)
+	}
 
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureOutInnerType(outInnerType); err != nil {

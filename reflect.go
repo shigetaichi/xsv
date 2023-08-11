@@ -58,7 +58,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 		var currFieldInfo *fieldInfo
 		if !field.Anonymous {
 			filteredTags := []string{}
-			currFieldInfo, filteredTags = filterTags(tagName, indexChain, field, tagSeparator)
+			currFieldInfo, filteredTags = filterTags(tagName, indexChain, field, tagSeparator, normalizeName)
 
 			if len(filteredTags) == 1 && filteredTags[0] == "-" {
 				// ignore nested structs with - tag
@@ -174,7 +174,7 @@ func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []stri
 	return fieldsList
 }
 
-func filterTags(tagName string, indexChain []int, field reflect.StructField, tagSeparator string) (*fieldInfo, []string) {
+func filterTags(tagName string, indexChain []int, field reflect.StructField, tagSeparator string, normalizeName Normalizer) (*fieldInfo, []string) {
 	currFieldInfo := fieldInfo{IndexChain: indexChain}
 
 	fieldTag := field.Tag.Get(tagName)
