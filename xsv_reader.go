@@ -16,6 +16,12 @@ func NewXsvReader[T any](xsvRead XsvRead[T]) *XsvReader[T] {
 	return &XsvReader[T]{XsvRead: xsvRead}
 }
 
+func (r *XsvReader[T]) Lazy() *XsvReader[T] {
+	r.reader.LazyQuotes = true
+	r.reader.TrimLeadingSpace = true
+	return r
+}
+
 func (r *XsvReader[T]) ReadTo(out *[]T) error {
 	decoder := csvDecoder{r.reader}
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
