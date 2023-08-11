@@ -26,9 +26,7 @@ func (xw *XsvWriter[T]) UseCRLF(useCRLF bool) *XsvWriter[T] {
 
 func (xw *XsvWriter[T]) Write(data []T) error {
 	inValue, inType := getConcreteReflectValueAndType(data) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := ensureInType(inType); err != nil {
-		return err
-	}
+
 	inInnerWasPointer, inInnerType := getConcreteContainerInnerType(inType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureInInnerType(inInnerType); err != nil {
 		return err
