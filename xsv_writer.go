@@ -32,7 +32,7 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 		return err
 	}
 
-	fieldsList := getFieldInfosWithTagName(inInnerType, []int{}, []string{}, xw.TagName, xw.TagSeparator) // Get the inner struct info to get CSV annotations
+	fieldsList := getFieldInfos(inInnerType, []int{}, []string{}, xw.TagName, xw.TagSeparator, xw.nameNormalizer) // Get the inner struct info to get CSV annotations
 	inInnerStructInfo := &structInfo{fieldsList}
 
 	inInnerStructInfo.Fields = getPickedFields(inInnerStructInfo.Fields, xw.SelectedColumnIndex) // Filter Fields from all fields
@@ -77,7 +77,8 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 		return err
 	}
 	inInnerWasPointer := inType.Kind() == reflect.Ptr
-	inInnerStructInfo := getStructInfoNoCache(inType)                                            // Get the inner struct info to get CSV annotations
+	fieldsList := getFieldInfos(inType, []int{}, []string{}, xw.TagName, xw.TagSeparator, xw.nameNormalizer) // Get the inner struct info to get CSV annotations
+	inInnerStructInfo := &structInfo{fieldsList}
 	inInnerStructInfo.Fields = getPickedFields(inInnerStructInfo.Fields, xw.SelectedColumnIndex) // Filtered out ignoreFields from all fields
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to Write the header (first line) in CSV

@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 // --------------------------------------------------------------------------
@@ -38,33 +37,12 @@ func (f fieldInfo) matchesKey(key string) bool {
 	return false
 }
 
-var structInfoCache sync.Map
-var structMap = make(map[reflect.Type]*structInfo)
-var structMapMutex sync.RWMutex
-
-func getStructInfoNoCache(rType reflect.Type) *structInfo {
-	fieldsList := getFieldInfos(rType, []int{}, []string{})
+func getStructInfo(rType reflect.Type) *structInfo {
+	fieldsList := getFieldInfos(rType, []int{}, []string{}, TagName, TagSeparator, normalizeName)
 	return &structInfo{fieldsList}
 }
 
-func getStructInfo(rType reflect.Type) *structInfo {
-	stInfo, ok := structInfoCache.Load(rType)
-	if ok {
-		return stInfo.(*structInfo)
-	}
-
-	fieldsList := getFieldInfos(rType, []int{}, []string{})
-	stInfo = &structInfo{fieldsList}
-	structInfoCache.Store(rType, stInfo)
-
-	return stInfo.(*structInfo)
-}
-
-func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []string) []fieldInfo {
-	return getFieldInfosWithTagName(rType, parentIndexChain, parentKeys, TagName, TagSeparator)
-}
-
-func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parentKeys []string, tagName, tagSeparator string) []fieldInfo {
+func getFieldInfos(rType reflect.Type, parentIndexChain []int, parentKeys []string, tagName, tagSeparator string, normalizeName Normalizer) []fieldInfo {
 	fieldsCount := rType.NumField()
 	fieldsList := make([]fieldInfo, 0, fieldsCount)
 	for i := 0; i < fieldsCount; i++ {
@@ -120,7 +98,7 @@ func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parent
 				if currFieldInfo != nil {
 					keys = currFieldInfo.keys
 				}
-				fieldsList = append(fieldsList, getFieldInfos(fieldType, indexChain, keys)...)
+				fieldsList = append(fieldsList, getFieldInfos(fieldType, indexChain, keys, tagName, tagSeparator, normalizeName)...)
 				continue
 			}
 		}
@@ -132,13 +110,13 @@ func getFieldInfosWithTagName(rType reflect.Type, parentIndexChain []int, parent
 
 		if field.Type.Kind() == reflect.Slice || field.Type.Kind() == reflect.Array {
 			var arrayLength = -1
-			if arrayTag, ok := field.Tag.Lookup(TagName + "[]"); ok {
+			if arrayTag, ok := field.Tag.Lookup(tagName + "[]"); ok {
 				arrayLength, _ = strconv.Atoi(arrayTag)
 			}
 
 			// When the field is a slice/array of structs, create a fieldInfo for each index and each field
 			if field.Type.Elem().Kind() == reflect.Struct {
-				fieldInfos := getFieldInfos(field.Type.Elem(), []int{}, []string{})
+				fieldInfos := getFieldInfos(field.Type.Elem(), []int{}, []string{}, tagName, tagSeparator, normalizeName)
 
 				for idx := 0; idx < arrayLength; idx++ {
 					// copy index chain and append array index

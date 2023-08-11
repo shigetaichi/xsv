@@ -12,6 +12,7 @@ type XsvWrite[T any] struct {
 	OmitHeaders         bool
 	SelectedColumnIndex []int
 	ColumnSorter        ColumnSorter
+	nameNormalizer      Normalizer
 }
 
 func NewXSVWrite[T any]() XsvWrite[T] {
@@ -23,6 +24,7 @@ func NewXSVWrite[T any]() XsvWrite[T] {
 		ColumnSorter: func(row []string) []string {
 			return row
 		},
+		nameNormalizer: func(s string) string { return s },
 	}
 }
 
