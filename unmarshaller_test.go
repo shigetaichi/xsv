@@ -82,7 +82,7 @@ func TestUnmarshalListOfStructsAfterMarshal(t *testing.T) {
 	var outData []*Option
 	innerReader := csv.NewReader(buffer)
 	innerReader.Comma = '|'
-	if err := UnmarshalCSV(innerReader, &outData); err != nil {
+	if err := NewXSVRead[*Option]().SetReader(innerReader).ReadTo(&outData); err != nil {
 		t.Fatalf("Error unmarshalling data from CSV: %#v", err)
 	}
 

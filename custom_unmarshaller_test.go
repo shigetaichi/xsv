@@ -1,8 +1,6 @@
 package xsv
 
 import (
-	"encoding/csv"
-	"strings"
 	"testing"
 )
 
@@ -32,8 +30,7 @@ func Test_CSV_Base(t *testing.T) {
 `
 
 	var rows []row
-	r := csv.NewReader(strings.NewReader(exampleCSV))
-	err := UnmarshalCSV(r, &rows)
+	err := NewXSVRead[row]().SetStringReader(exampleCSV).ReadTo(&rows)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -71,9 +68,8 @@ type TestStruct struct {
 
 func TestPanic(t *testing.T) {
 	line := "make,backups,test it"
-	r := strings.NewReader(line)
 	var DataValues []TestStruct
-	err := UnmarshalWithoutHeaders(r, &DataValues)
+	err := NewXSVRead[TestStruct]().SetStringReader(line).ReadToWithoutHeaders(&DataValues)
 	if err != nil {
 		t.Fatal(err)
 	}

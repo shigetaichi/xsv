@@ -1,7 +1,10 @@
 package xsv
 
 import (
+	"bytes"
 	"encoding/csv"
+	"os"
+	"strings"
 )
 
 type XsvRead[T any] struct {
@@ -30,4 +33,16 @@ func (x *XsvRead[T]) SetReader(r *csv.Reader) (xr *XsvReader[T]) {
 	xr = NewXsvReader(*x)
 	xr.reader = r
 	return xr
+}
+
+func (x *XsvRead[T]) SetFileReader(file *os.File) (xr *XsvReader[T]) {
+	return x.SetReader(csv.NewReader(file))
+}
+
+func (x *XsvRead[T]) SetStringReader(string string) (xr *XsvReader[T]) {
+	return x.SetReader(csv.NewReader(strings.NewReader(string)))
+}
+
+func (x *XsvRead[T]) SetByteReader(byte []byte) (xr *XsvReader[T]) {
+	return x.SetReader(csv.NewReader(bytes.NewReader(byte)))
 }

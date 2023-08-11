@@ -576,7 +576,7 @@ func TestUnmarshalCSVWithFields(t *testing.T) {
 bar,1,zip,3.14
 baz,2,zap,4.00`)
 	var samples []UnmarshalCSVWithFieldsSample
-	err := UnmarshalBytes(b, &samples)
+	err := NewXSVRead[UnmarshalCSVWithFieldsSample]().SetByteReader(b).ReadTo(&samples)
 	if err != nil {
 		t.Fatalf("UnmarshalCSVWithFields() -> UnmarshalBytes() %v", err)
 	}
@@ -882,7 +882,7 @@ func TestUnmarshalCSVWithoutHeaders(t *testing.T) {
 	csvReader.Comma = '\t'
 
 	var samples []Sample
-	if err := UnmarshalCSVWithoutHeaders(csvReader, &samples); err != nil {
+	if err := NewXSVRead[Sample]().SetReader(csvReader).ReadToWithoutHeaders(&samples); err != nil {
 		t.Fatal(err)
 	}
 
@@ -905,7 +905,7 @@ func TestDecodeDefaultValues(t *testing.T) {
 ,
 `)
 	var out []defaultValueStruct
-	if err := Unmarshal(b, &out); err != nil {
+	if err := NewXSVRead[defaultValueStruct]().SetReader(csv.NewReader(b)).ReadTo(&out); err != nil {
 		t.Fatal(err)
 	}
 
@@ -926,7 +926,7 @@ func TestTrimTagWhitespace(t *testing.T) {
 	var out []whiteSpaceOptionStruct
 	b := bytes.NewBufferString(`foo,bar
 ,`)
-	if err := Unmarshal(b, &out); err != nil {
+	if err := NewXSVRead[whiteSpaceOptionStruct]().SetReader(csv.NewReader(b)).ReadTo(&out); err != nil {
 		t.Fatal(err)
 	}
 	expected := whiteSpaceOptionStruct{

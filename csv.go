@@ -9,7 +9,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"strings"
 )
@@ -64,11 +63,6 @@ func LazyCSVReader(in io.Reader) CSVReader {
 	return csvReader
 }
 
-// SetCSVReader sets the CSV reader used to parse CSV.
-func SetCSVReader(csvReader func(io.Reader) CSVReader) {
-	selfCSVReader = csvReader
-}
-
 func getCSVReader(in io.Reader) CSVReader {
 	return selfCSVReader(in)
 }
@@ -78,56 +72,6 @@ func getCSVReader(in io.Reader) CSVReader {
 
 // --------------------------------------------------------------------------
 // Unmarshal functions
-
-// UnmarshalFile parses the CSV from the file in the interface.
-func UnmarshalFile(in *os.File, out interface{}) error {
-	return Unmarshal(in, out)
-}
-
-// UnmarshalFile parses the CSV from the file in the interface.
-func UnmarshalFileWithErrorHandler(in *os.File, errHandler ErrorHandler, out interface{}) error {
-	return UnmarshalWithErrorHandler(in, errHandler, out)
-}
-
-// UnmarshalString parses the CSV from the string in the interface.
-func UnmarshalString(in string, out interface{}) error {
-	return Unmarshal(strings.NewReader(in), out)
-}
-
-// UnmarshalBytes parses the CSV from the bytes in the interface.
-func UnmarshalBytes(in []byte, out interface{}) error {
-	return Unmarshal(bytes.NewReader(in), out)
-}
-
-// Unmarshal parses the CSV from the reader in the interface.
-func Unmarshal(in io.Reader, out interface{}) error {
-	return readTo(newSimpleDecoderFromReader(in), out)
-}
-
-// Unmarshal parses the CSV from the reader in the interface.
-func UnmarshalWithErrorHandler(in io.Reader, errHandle ErrorHandler, out interface{}) error {
-	return readToWithErrorHandler(newSimpleDecoderFromReader(in), errHandle, out)
-}
-
-// UnmarshalWithoutHeaders parses the CSV from the reader in the interface.
-func UnmarshalWithoutHeaders(in io.Reader, out interface{}) error {
-	return readToWithoutHeaders(newSimpleDecoderFromReader(in), out)
-}
-
-// UnmarshalCSVWithoutHeaders parses a headerless CSV with passed in CSV reader
-func UnmarshalCSVWithoutHeaders(in CSVReader, out interface{}) error {
-	return readToWithoutHeaders(csvDecoder{in}, out)
-}
-
-// UnmarshalDecoder parses the CSV from the decoder in the interface
-func UnmarshalDecoder(in Decoder, out interface{}) error {
-	return readTo(in, out)
-}
-
-// UnmarshalCSV parses the CSV from the reader in the interface.
-func UnmarshalCSV(in CSVReader, out interface{}) error {
-	return readTo(csvDecoder{in}, out)
-}
 
 // UnmarshalCSVToMap parses a CSV of 2 columns into a map.
 func UnmarshalCSVToMap(in CSVReader, out interface{}) error {
@@ -172,16 +116,7 @@ func UnmarshalToChan(in io.Reader, c interface{}) error {
 	if c == nil {
 		return fmt.Errorf("goscv: channel is %v", c)
 	}
-	return readEach(newSimpleDecoderFromReader(in), c)
-}
-
-// UnmarshalToChanWithoutHeaders parses the CSV from the reader and send each value in the chan c.
-// The channel must have a concrete type.
-func UnmarshalToChanWithoutHeaders(in io.Reader, c interface{}) error {
-	if c == nil {
-		return fmt.Errorf("goscv: channel is %v", c)
-	}
-	return readEachWithoutHeaders(newSimpleDecoderFromReader(in), c)
+	return readEach(csvDecoder{csv.NewReader(in)}, c)
 }
 
 // UnmarshalDecoderToChan parses the CSV from the decoder and send each value in the chan c.
@@ -191,18 +126,6 @@ func UnmarshalDecoderToChan(in SimpleDecoder, c interface{}) error {
 		return fmt.Errorf("goscv: channel is %v", c)
 	}
 	return readEach(in, c)
-}
-
-// UnmarshalStringToChan parses the CSV from the string and send each value in the chan c.
-// The channel must have a concrete type.
-func UnmarshalStringToChan(in string, c interface{}) error {
-	return UnmarshalToChan(strings.NewReader(in), c)
-}
-
-// UnmarshalBytesToChan parses the CSV from the bytes and send each value in the chan c.
-// The channel must have a concrete type.
-func UnmarshalBytesToChan(in []byte, c interface{}) error {
-	return UnmarshalToChan(bytes.NewReader(in), c)
 }
 
 // UnmarshalToCallback parses the CSV from the reader and send each value to the given func f.
@@ -363,7 +286,7 @@ func UnmarshalStringToCallbackWithError(in string, c interface{}) (err error) {
 
 // CSVToMap creates a simple map from a CSV of 2 columns.
 func CSVToMap(in io.Reader) (map[string]string, error) {
-	decoder := newSimpleDecoderFromReader(in)
+	decoder := csvDecoder{getCSVReader(in)}
 	header, err := decoder.GetCSVRow()
 	if err != nil {
 		return nil, err
