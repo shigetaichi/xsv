@@ -18,10 +18,9 @@ func Test_readTo(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr,Omit
 f,1,baz,,*string,*string
 e,3,b,,,`)
-	d := newSimpleDecoderFromReader(b)
-
 	var samples []Sample
-	if err := readTo(d, &samples); err != nil {
+	xsvRead := NewXSVRead[Sample]()
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if len(samples) != 2 {
@@ -41,9 +40,9 @@ e,3,b,,,`)
 	b = bytes.NewBufferString(`foo,BAR,Baz
 f,1,baz
 e,BAD_INPUT,b`)
-	d = newSimpleDecoderFromReader(b)
+
 	samples = []Sample{}
-	err := readTo(d, &samples)
+	err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples)
 	if err == nil {
 		t.Fatalf("Expected error from bad input, got: %+v", samples)
 	}
@@ -69,8 +68,6 @@ func Test_readToNormalized(t *testing.T) {
 	b := bytes.NewBufferString(`FOO,BAR,BAZ,BLAH,SPTR,OMIT
 f,1,baz,,*string,*string
 e,3,b,,,`)
-	d := newSimpleDecoderFromReader(b)
-
 	var samples []Sample
 	xsvRead := NewXSVRead[Sample]()
 	xsvRead.NameNormalizer = func(s string) string {
@@ -96,9 +93,9 @@ e,3,b,,,`)
 	b = bytes.NewBufferString(`foo,BAR,Baz
 f,1,baz
 e,BAD_INPUT,b`)
-	d = newSimpleDecoderFromReader(b)
+
 	samples = []Sample{}
-	err := readTo(d, &samples)
+	err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples)
 	if err == nil {
 		t.Fatalf("Expected error from bad input, got: %+v", samples)
 	}
@@ -119,10 +116,9 @@ e,BAD_INPUT,b`)
 func Test_readTo_Time(t *testing.T) {
 	b := bytes.NewBufferString(`Foo
 1970-01-01T03:01:00+03:00`)
-	d := newSimpleDecoderFromReader(b)
 
 	var samples []DateTime
-	if err := readTo(d, &samples); err != nil {
+	if err := NewXSVRead[DateTime]().SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 
@@ -139,10 +135,9 @@ func Test_readTo_complex_embed(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
-	d := newSimpleDecoderFromReader(b)
 
 	var samples []SkipFieldSample
-	if err := readTo(d, &samples); err != nil {
+	if err := NewXSVRead[SkipFieldSample]().SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if len(samples) != 2 {
@@ -184,9 +179,9 @@ func Test_readTo_embed_ptr(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
-	d := newSimpleDecoderFromReader(b)
+
 	var rows []EmbedPtrSample
-	if err := readTo(d, &rows); err != nil {
+	if err := NewXSVRead[EmbedPtrSample]().SetReader(csv.NewReader(b)).ReadTo(&rows); err != nil {
 		t.Fatalf(err.Error())
 	}
 	expected := EmbedPtrSample{
@@ -209,9 +204,8 @@ func Test_readTo_slice(t *testing.T) {
 [1, 2, 3]`)
 	reader := csv.NewReader(b)
 	reader.Comma = '\t'
-	d := csvDecoder{reader}
 	samples := []SliceSample{}
-	if err := readTo(d, &samples); err != nil {
+	if err := NewXSVRead[SliceSample]().SetReader(reader).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	expected := SliceSample{Slice: []int{}}
@@ -227,10 +221,9 @@ func Test_readTo_slice(t *testing.T) {
 func Test_readTo_slice_structs(t *testing.T) {
 	b := bytes.NewBufferString(`s[0].string,slice[0].f,slice[1].s,s[1].float,a[0].s,array[0].float,a[1].s,array[1].float,ints[0],ints[1],ints[2]
 s1,1.1,s2,2.2,s3,3.3,s4,4.4,1,2,3`)
-	d := newSimpleDecoderFromReader(b)
 
 	var samples []SliceStructSample
-	err := readTo(d, &samples)
+	err := NewXSVRead[SliceStructSample]().SetReader(csv.NewReader(b)).ReadTo(&samples)
 	if err != nil {
 		t.Fatalf("failed to unmarshal: %v", err)
 	}
@@ -255,9 +248,9 @@ s1,1.1,s2,2.2,s3,3.3,s4,4.4,1,2,3`)
 func Test_readTo_embed_marshal(t *testing.T) {
 	b := bytes.NewBufferString(`foo
 bar`)
-	d := newSimpleDecoderFromReader(b)
+
 	var rows []EmbedMarshal
-	if err := readTo(d, &rows); err != nil {
+	if err := NewXSVRead[EmbedMarshal]().SetReader(csv.NewReader(b)).ReadTo(&rows); err != nil {
 		t.Fatalf(err.Error())
 	}
 	expected := EmbedMarshal{
@@ -271,9 +264,9 @@ bar`)
 func Test_readTo_embed_unmarshal_csv_with_clashing_field(t *testing.T) {
 	b := bytes.NewBufferString(`Symbol,Timestamp
 test,1656460798.693201614`)
-	d := newSimpleDecoderFromReader(b)
+
 	var rows []EmbedUnmarshalCSVWithClashingField
-	if err := readTo(d, &rows); err != nil {
+	if err := NewXSVRead[EmbedUnmarshalCSVWithClashingField]().SetReader(csv.NewReader(b)).ReadTo(&rows); err != nil {
 		t.Fatalf(err.Error())
 	}
 	expected := EmbedUnmarshalCSVWithClashingField{
@@ -289,12 +282,11 @@ func Test_readEach(t *testing.T) {
 	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
-	d := newSimpleDecoderFromReader(b)
 
 	c := make(chan SkipFieldSample)
 	var samples []SkipFieldSample
 	go func() {
-		if err := readEach(d, c); err != nil {
+		if err := NewXSVRead[SkipFieldSample]().SetReader(csv.NewReader(b)).ReadEach(c); err != nil {
 			t.Fatal(err)
 		}
 	}()
@@ -341,12 +333,11 @@ func Test_readEachWithoutHeaders(t *testing.T) {
 	sptr := ""
 	b := bytes.NewBufferString(`f,1,baz,1.66,,,
 e,3,b,,,,`)
-	d := newSimpleDecoderFromReader(b)
 
 	c := make(chan Sample)
 	var samples []Sample
 	go func() {
-		if err := readEachWithoutHeaders(d, c); err != nil {
+		if err := NewXSVRead[Sample]().SetReader(csv.NewReader(b)).ReadEachWithoutHeaders(c); err != nil {
 			t.Fatal(err)
 		}
 	}()
@@ -410,7 +401,7 @@ func Test_maybeDoubleHeaderNames(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d := newSimpleDecoderFromReader(b)
+
 	var samples []Sample
 
 	// *** check maybeDoubleHeaderNames
@@ -418,8 +409,9 @@ e,3,b`)
 		t.Fatal("maybeDoubleHeaderNames did not raise an error when a should have.")
 	}
 
+	xsvRead := NewXSVRead[Sample]()
 	// *** check readTo
-	if err := readTo(d, &samples); err != nil {
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	// Double header allowed, value should be of third row
@@ -430,9 +422,9 @@ e,3,b`)
 	b = bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d = newSimpleDecoderFromReader(b)
-	ShouldAlignDuplicateHeadersWithStructFieldOrder = true
-	if err := readTo(d, &samples); err != nil {
+
+	xsvRead.ShouldAlignDuplicateHeadersWithStructFieldOrder = true
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	// Double header allowed, value should be of first row
@@ -440,23 +432,23 @@ e,3,b`)
 		t.Fatal("Double header allowed, value should be of first row but is not. Function called is readTo.")
 	}
 
-	ShouldAlignDuplicateHeadersWithStructFieldOrder = false
+	xsvRead.ShouldAlignDuplicateHeadersWithStructFieldOrder = false
 	// Double header not allowed, should fail
-	FailIfDoubleHeaderNames = true
-	if err := readTo(d, &samples); err == nil {
+	xsvRead.FailIfDoubleHeaderNames = true
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err == nil {
 		t.Fatal("Double header not allowed but no error raised. Function called is readTo.")
 	}
 
 	// *** check readEach
-	FailIfDoubleHeaderNames = false
+	xsvRead.FailIfDoubleHeaderNames = false
 	b = bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d = newSimpleDecoderFromReader(b)
+
 	samples = samples[:0]
 	c := make(chan Sample)
 	go func() {
-		if err := readEach(d, c); err != nil {
+		if err := xsvRead.SetReader(csv.NewReader(b)).ReadEach(c); err != nil {
 			t.Fatal(err)
 		}
 	}()
@@ -468,14 +460,14 @@ e,3,b`)
 		t.Fatal("Double header allowed, value should be of third row but is not. Function called is readEach.")
 	}
 	// Double header not allowed, should fail
-	FailIfDoubleHeaderNames = true
+	xsvRead.FailIfDoubleHeaderNames = true
 	b = bytes.NewBufferString(`foo,BAR,foo
 f,1,baz
 e,3,b`)
-	d = newSimpleDecoderFromReader(b)
+
 	c = make(chan Sample)
 	go func() {
-		if err := readEach(d, c); err == nil {
+		if err := xsvRead.SetReader(csv.NewReader(b)).ReadEach(c); err == nil {
 			t.Fatal("Double header not allowed but no error raised. Function called is readEach.")
 		}
 	}()
@@ -531,23 +523,15 @@ ff,gg,22,hh,ii,jj`)
 
 // TestRenamedTypes tests for unmarshaling functions on redefined basic types.
 func TestRenamedTypesUnmarshal(t *testing.T) {
-	// Set different csv field separator to enable comma in floats
-	SetCSVReader(func(in io.Reader) CSVReader {
-		csvin := csv.NewReader(in)
-		csvin.Comma = ';'
-		return csvin
-	})
-
 	b := bytes.NewBufferString(`foo;bar
 1,4;1.5
 2,3;2.4`)
-	d := newSimpleDecoderFromReader(b)
 	var samples []RenamedSample
 
-	// Switch back to default for tests executed after this
-	defer SetCSVReader(DefaultCSVReader)
-
-	if err := readTo(d, &samples); err != nil {
+	// Set different csv field separator to enable comma in floats
+	csvin := csv.NewReader(b)
+	csvin.Comma = ';'
+	if err := NewXSVRead[RenamedSample]().SetReader(csvin).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if samples[0].RenamedFloatUnmarshaler != 1.4 {
@@ -560,9 +544,10 @@ func TestRenamedTypesUnmarshal(t *testing.T) {
 	// Test that errors raised by UnmarshalCSV are correctly reported
 	b = bytes.NewBufferString(`foo;bar
 4.2;2.4`)
-	d = newSimpleDecoderFromReader(b)
+	csvin = csv.NewReader(b)
+	csvin.Comma = ';'
 	samples = samples[:0]
-	if perr, _ := readTo(d, &samples).(*csv.ParseError); perr == nil {
+	if perr, _ := NewXSVRead[RenamedSample]().SetReader(csvin).ReadTo(&samples).(*csv.ParseError); perr == nil {
 		t.Fatalf("Expected ParseError, got nil.")
 	} else if _, ok := perr.Err.(UnmarshalError); !ok {
 		t.Fatalf("Expected UnmarshalError, got %v", perr.Err)
@@ -676,10 +661,9 @@ func (e UnmarshalError) Error() string {
 func TestMultipleStructTags(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,Baz
 e,3,b`)
-	d := newSimpleDecoderFromReader(b)
 
 	var samples []MultiTagSample
-	if err := readTo(d, &samples); err != nil {
+	if err := NewXSVRead[MultiTagSample]().SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if samples[0].Foo != "b" {
@@ -688,9 +672,8 @@ e,3,b`)
 
 	b = bytes.NewBufferString(`foo,BAR
 e,3`)
-	d = newSimpleDecoderFromReader(b)
 
-	if err := readTo(d, &samples); err != nil {
+	if err := NewXSVRead[MultiTagSample]().SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if samples[0].Foo != "e" {
@@ -699,9 +682,8 @@ e,3`)
 
 	b = bytes.NewBufferString(`BAR,Baz
 3,b`)
-	d = newSimpleDecoderFromReader(b)
 
-	if err := readTo(d, &samples); err != nil {
+	if err := NewXSVRead[MultiTagSample]().SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 	if samples[0].Foo != "b" {
@@ -712,16 +694,11 @@ e,3`)
 func TestStructTagSeparator(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR,Baz
 e,3,b`)
-	d := newSimpleDecoderFromReader(b)
-
-	defaultTagSeparator := TagSeparator
-	TagSeparator = "|"
-	defer func() {
-		TagSeparator = defaultTagSeparator
-	}()
 
 	var samples []TagSeparatorSample
-	if err := readTo(d, &samples); err != nil {
+	xsvRead := NewXSVRead[TagSeparatorSample]()
+	xsvRead.TagSeparator = "|"
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 
@@ -733,16 +710,11 @@ e,3,b`)
 func TestCustomTag(t *testing.T) {
 	b := bytes.NewBufferString(`foo,BAR
 e,3`)
-	d := newSimpleDecoderFromReader(b)
-
-	defaultTagName := TagName
-	TagName = "custom"
-	defer func() {
-		TagName = defaultTagName
-	}()
 
 	var samples []CustomTagSample
-	if err := readTo(d, &samples); err != nil {
+	xsvRead := NewXSVRead[CustomTagSample]()
+	xsvRead.TagName = "custom"
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
 		t.Fatal(err)
 	}
 
@@ -885,10 +857,9 @@ func TestUnmarshalWithoutHeader(t *testing.T) {
 	sptr := ""
 	b := bytes.NewBufferString(`f,1,baz,1.66,,,
 e,3,b,,,,`)
-	d := newSimpleDecoderFromReader(b)
 
 	var samples []Sample
-	if err := readToWithoutHeaders(d, &samples); err != nil {
+	if err := NewXSVRead[Sample]().SetReader(csv.NewReader(b)).ReadToWithoutHeaders(&samples); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1023,10 +994,9 @@ func BenchmarkUnmarshalCSVToMap(b *testing.B) {
 func Test_readTo_nested_struct(t *testing.T) {
 	b := bytes.NewBufferString(`one.boolField1,one.stringField2,two.boolField1,two.stringField2,three.boolField1,three.stringField2
 false,email_one,true,email_two,false,email_three`)
-	d := newSimpleDecoderFromReader(b)
 
 	var samples []NestedSample
-	err := readTo(d, &samples)
+	err := NewXSVRead[NestedSample]().SetReader(csv.NewReader(b)).ReadTo(&samples)
 	if err != nil {
 		t.Fatalf("failed to unmarshal: %v", err)
 	}

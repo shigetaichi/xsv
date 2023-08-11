@@ -196,3 +196,90 @@ func (r *XsvReader[T]) ReadEach(c chan T) error {
 	}
 	return nil
 }
+
+func (r *XsvReader[T]) ReadToWithoutHeaders(out *[]T) error {
+	decoder := csvDecoder{r.reader}
+	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
+	if err := ensureOutType(outType); err != nil {
+		return err
+	}
+	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
+	if err := ensureOutInnerType(outInnerType); err != nil {
+		return err
+	}
+	csvRows, err := decoder.GetCSVRows() // Get the CSV csvRows
+	if err != nil {
+		return err
+	}
+	if len(csvRows) == 0 {
+		return ErrEmptyCSVFile
+	}
+	if err := ensureOutCapacity(&outValue, len(csvRows)+1); err != nil { // Ensure the container is big enough to hold the CSV content
+		return err
+	}
+	fieldsList := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
+	outInnerStructInfo := &structInfo{fieldsList}
+	if len(outInnerStructInfo.Fields) == 0 {
+		return ErrNoStructTags
+	}
+
+	for i, csvRow := range csvRows {
+		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+		for j, csvColumnContent := range csvRow {
+			fieldInfo := outInnerStructInfo.Fields[j]
+			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+				return &csv.ParseError{
+					Line:   i + 1,
+					Column: j + 1,
+					Err:    err,
+				}
+			}
+		}
+		outValue.Index(i).Set(outInner)
+	}
+
+	return nil
+}
+
+func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
+	decoder := csvDecoder{r.reader}
+	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
+	if err := ensureOutType(outType); err != nil {
+		return err
+	}
+	defer outValue.Close()
+
+	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
+	if err := ensureOutInnerType(outInnerType); err != nil {
+		return err
+	}
+	fieldsList := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
+	outInnerStructInfo := &structInfo{fieldsList}
+	if len(outInnerStructInfo.Fields) == 0 {
+		return ErrNoStructTags
+	}
+
+	i := 0
+	for {
+		line, err := decoder.GetCSVRow()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return err
+		}
+		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+		for j, csvColumnContent := range line {
+			fieldInfo := outInnerStructInfo.Fields[j]
+			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+				return &csv.ParseError{
+					Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+					Column: j + 1,
+					Err:    err,
+				}
+			}
+		}
+		outValue.Send(outInner)
+		i++
+	}
+	return nil
+}
