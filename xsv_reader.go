@@ -41,8 +41,8 @@ func (r *XsvReader[T]) ReadTo(out *[]T) error {
 	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
-	fieldsList := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
-	outInnerStructInfo := &structInfo{fieldsList}
+	fieldInfos := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
+	outInnerStructInfo := &structInfo{fieldInfos}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
@@ -150,8 +150,8 @@ func (r *XsvReader[T]) ReadEach(c chan T) error {
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	fieldsList := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
-	outInnerStructInfo := &structInfo{fieldsList}
+	fieldInfos := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
+	outInnerStructInfo := &structInfo{fieldInfos}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
@@ -223,8 +223,8 @@ func (r *XsvReader[T]) ReadToWithoutHeaders(out *[]T) error {
 	if err := ensureOutCapacity(&outValue, len(csvRows)+1); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
-	fieldsList := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
-	outInnerStructInfo := &structInfo{fieldsList}
+	fieldInfos := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
+	outInnerStructInfo := &structInfo{fieldInfos}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
@@ -260,8 +260,8 @@ func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	fieldsList := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
-	outInnerStructInfo := &structInfo{fieldsList}
+	fieldInfos := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
+	outInnerStructInfo := &structInfo{fieldInfos}
 	if len(outInnerStructInfo.Fields) == 0 {
 		return ErrNoStructTags
 	}
