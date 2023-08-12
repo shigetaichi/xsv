@@ -2,7 +2,6 @@ package xsv
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 	"reflect"
 )
@@ -132,10 +131,11 @@ func (r *XsvReader[T]) ReadTo(out *[]T) error {
 func (r *XsvReader[T]) ReadEach(c chan T) error {
 	decoder := csvDecoder{r.reader}
 	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer)
-	if outType.Kind() != reflect.Chan {                    // TODO: 不要な場合は削除
-		return fmt.Errorf("cannot use %v with type %s, only channel supported", c, outType)
-	}
-	defer outValue.Close()
+	//if outType.Kind() != reflect.Chan {                    // TODO: 不要な場合は削除
+	//	return fmt.Errorf("cannot use %v with type %s, only channel supported", c, outType)
+	//}
+	//defer outValue.Close()
+	defer close(c)
 
 	headers, err := decoder.GetCSVRow()
 	if err != nil {
@@ -250,10 +250,11 @@ func (r *XsvReader[T]) ReadToWithoutHeaders(out *[]T) error {
 func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
 	decoder := csvDecoder{r.reader}
 	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := ensureOutType(outType); err != nil {
-		return err
-	}
-	defer outValue.Close()
+	//if err := ensureOutType(outType); err != nil { // TODO: 不要なら消す
+	//	return err
+	//}
+	//defer outValue.Close()
+	defer close(c)
 
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureOutInnerType(outInnerType); err != nil {
@@ -288,4 +289,26 @@ func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
 		i++
 	}
 	return nil
+}
+
+func (r *XsvReader[T]) ReadToCallback(f func(s T) error) error {
+	cerr := make(chan error)
+	c := make(chan T)
+	go func() {
+		cerr <- r.ReadEach(c)
+	}()
+	for {
+		select {
+		case err := <-cerr:
+			return err
+		case v, ok := <-c:
+			if !ok {
+				break
+			}
+			if err := f(v); err != nil {
+				return err
+			}
+		default:
+		}
+	}
 }

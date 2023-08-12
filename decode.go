@@ -1,23 +1,10 @@
 package xsv
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 )
-
-// Decoder .
-type Decoder interface {
-	GetCSVRows() ([][]string, error)
-}
-
-// SimpleDecoder .
-type SimpleDecoder interface {
-	GetCSVRow() ([]string, error)
-	GetCSVRows() ([][]string, error)
-}
 
 type CSVReader interface {
 	Read() ([]string, error)
@@ -32,14 +19,6 @@ var (
 	ErrEmptyCSVFile = errors.New("empty csv file given")
 	ErrNoStructTags = errors.New("no csv struct tags found")
 )
-
-// NewSimpleDecoderFromCSVReader creates a SimpleDecoder, which may be passed
-// to the UnmarshalDecoder* family of functions, from a CSV reader. Note that
-// encoding/csv.Reader implements CSVReader, so you can pass one of those
-// directly here.
-func NewSimpleDecoderFromCSVReader(r CSVReader) SimpleDecoder {
-	return csvDecoder{r}
-}
 
 func (c csvDecoder) GetCSVRows() ([][]string, error) {
 	return c.ReadAll()
@@ -112,78 +91,6 @@ func maybeDoubleHeaderNames(headers []string) error {
 			return fmt.Errorf("repeated header name: %v", v)
 		}
 		headerMap[v] = true
-	}
-	return nil
-}
-
-func readEach(decoder SimpleDecoder, c interface{}) error {
-	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer)
-	if outType.Kind() != reflect.Chan {
-		return fmt.Errorf("cannot use %v with type %s, only channel supported", c, outType)
-	}
-	defer outValue.Close()
-
-	headers, err := decoder.GetCSVRow()
-	if err != nil {
-		return err
-	}
-
-	for i, h := range headers { // apply normalizer func to headers
-		headers[i] = normalizeName(h)
-	}
-
-	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
-	if err := ensureOutInnerType(outInnerType); err != nil {
-		return err
-	}
-	outInnerStructInfo := getStructInfo(outInnerType) // Get the inner struct info to get CSV annotations
-	if len(outInnerStructInfo.Fields) == 0 {
-		return ErrNoStructTags
-	}
-	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
-	headerCount := map[string]int{}
-	for i, csvColumnHeader := range headers {
-		curHeaderCount := headerCount[csvColumnHeader]
-		if fieldInfo := getCSVFieldPosition(csvColumnHeader, outInnerStructInfo, curHeaderCount); fieldInfo != nil {
-			csvHeadersLabels[i] = fieldInfo
-			if ShouldAlignDuplicateHeadersWithStructFieldOrder {
-				curHeaderCount++
-				headerCount[csvColumnHeader] = curHeaderCount
-			}
-		}
-	}
-	if err := maybeMissingStructFields(outInnerStructInfo.Fields, headers); err != nil {
-		if FailIfUnmatchedStructTags {
-			return err
-		}
-	}
-	if FailIfDoubleHeaderNames {
-		if err := maybeDoubleHeaderNames(headers); err != nil {
-			return err
-		}
-	}
-	i := 0
-	for {
-		line, err := decoder.GetCSVRow()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
-		for j, csvColumnContent := range line {
-			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
-					return &csv.ParseError{
-						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
-						Column: j + 1,
-						Err:    err,
-					}
-				}
-			}
-		}
-		outValue.Send(outInner)
-		i++
 	}
 	return nil
 }

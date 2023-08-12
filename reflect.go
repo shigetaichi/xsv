@@ -38,7 +38,7 @@ func (f fieldInfo) matchesKey(key string) bool {
 }
 
 func getStructInfo(rType reflect.Type) *structInfo {
-	fieldsList := getFieldInfos(rType, []int{}, []string{}, TagName, TagSeparator, normalizeName)
+	fieldsList := getFieldInfos(rType, []int{}, []string{}, "csv", ",", normalizeName)
 	return &structInfo{fieldsList}
 }
 

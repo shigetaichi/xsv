@@ -481,8 +481,9 @@ func TestUnmarshalToCallback(t *testing.T) {
 aa,bb,11,cc,dd,ee
 ff,gg,22,hh,ii,jj`)
 	var samples []SkipFieldSample
-	if err := UnmarshalBytesToCallback(b.Bytes(), func(s SkipFieldSample) {
+	if err := NewXSVRead[SkipFieldSample]().SetByteReader(b.Bytes()).ReadToCallback(func(s SkipFieldSample) error {
 		samples = append(samples, s)
+		return nil
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -832,8 +833,9 @@ f,1,baz,,        *string
 e,3,b,,                            `)
 
 	var samples []Sample
-	if err := UnmarshalDecoderToCallback(&trimDecoder{LazyCSVReader(b)}, func(s Sample) {
+	if err := NewXSVRead[Sample]().SetReader(csv.NewReader(b)).Lazy().ReadToCallback(func(s Sample) error {
 		samples = append(samples, s)
+		return nil
 	}); err != nil {
 		t.Fatal(err)
 	}
