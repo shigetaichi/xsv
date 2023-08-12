@@ -3,7 +3,6 @@ package xsv
 import (
 	"bytes"
 	"encoding/csv"
-	"io"
 	"reflect"
 	"strconv"
 	"strings"
@@ -796,32 +795,6 @@ func TestCSVToMaps(t *testing.T) {
 	if thirdRecord["Baz"] != "84" {
 		t.Fatal("Expected 84 got", thirdRecord["Baz"])
 	}
-}
-
-type trimDecoder struct {
-	csvReader CSVReader
-}
-
-func (c *trimDecoder) GetCSVRow() ([]string, error) {
-	recoder, err := c.csvReader.Read()
-	for i, r := range recoder {
-		recoder[i] = strings.TrimRight(r, " ")
-	}
-	return recoder, err
-}
-
-func (c *trimDecoder) GetCSVRows() ([][]string, error) {
-	records := [][]string{}
-	for {
-		record, err := c.GetCSVRow()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-		records = append(records, record)
-	}
-	return records, nil
 }
 
 func TestUnmarshalToDecoder(t *testing.T) {

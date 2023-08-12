@@ -212,13 +212,3 @@ func getConcreteReflectValueAndType(in interface{}) (reflect.Value, reflect.Type
 	}
 	return value, value.Type()
 }
-
-var errorInterface = reflect.TypeOf((*error)(nil)).Elem()
-
-func isErrorType(outType reflect.Type) bool {
-	if outType.Kind() != reflect.Interface {
-		return false
-	}
-
-	return outType.Implements(errorInterface)
-}
