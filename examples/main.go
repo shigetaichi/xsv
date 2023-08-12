@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/gocarina/gocsv"
 	"os"
 	"sync"
 	"time"
@@ -27,9 +26,6 @@ type Address struct {
 	Street string `csv:"street"`
 	City   string `csv:"city"`
 }
-
-var _ gocsv.TypeMarshaller = new(DateTime)
-var _ gocsv.TypeUnmarshaller = new(DateTime)
 
 type DateTime struct {
 	time.Time
