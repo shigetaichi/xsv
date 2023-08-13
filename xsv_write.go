@@ -10,7 +10,7 @@ type XsvWrite[T any] struct {
 	TagName             string //key in the struct field's tag to scan
 	TagSeparator        string //separator string for multiple csv tags in struct fields
 	OmitHeaders         bool
-	selectedColumnIndex []int        // TODO: describe in comment
+	selectedColumnIndex []int        // slice indexes of selected columns
 	columnSorter        ColumnSorter // TODO: describe in comment
 	nameNormalizer      Normalizer
 }
