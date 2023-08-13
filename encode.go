@@ -3,7 +3,6 @@ package xsv
 import (
 	"errors"
 	"fmt"
-	"github.com/samber/lo"
 	"io"
 	"reflect"
 )
@@ -80,10 +79,8 @@ func getInnerField(outInner reflect.Value, outInnerWasPointer bool, index []int)
 func getPickedFields(fields []fieldInfo, columnFieldsIndexes []int) []fieldInfo {
 	var newFields []fieldInfo
 	if len(columnFieldsIndexes) > 0 {
-		for _, field := range fields {
-			if lo.Contains(columnFieldsIndexes, field.IndexChain[0]) {
-				newFields = append(newFields, field)
-			}
+		for _, columnFieldsIndex := range columnFieldsIndexes {
+			newFields = append(newFields, fields[columnFieldsIndex])
 		}
 	} else {
 		newFields = fields
