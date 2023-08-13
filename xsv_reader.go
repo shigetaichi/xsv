@@ -22,16 +22,13 @@ func (r *XsvReader[T]) Lazy() *XsvReader[T] {
 }
 
 func (r *XsvReader[T]) ReadTo(out *[]T) error {
-	decoder := csvDecoder{r.reader}
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := ensureOutType(outType); err != nil {
-		return err
-	}
+
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	csvRows, err := decoder.GetCSVRows() // Get the CSV csvRows
+	csvRows, err := r.reader.ReadAll() // Get the CSV csvRows
 	if err != nil {
 		return err
 	}
@@ -129,15 +126,10 @@ func (r *XsvReader[T]) ReadTo(out *[]T) error {
 }
 
 func (r *XsvReader[T]) ReadEach(c chan T) error {
-	decoder := csvDecoder{r.reader}
 	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer)
-	//if outType.Kind() != reflect.Chan {                    // TODO: 不要な場合は削除
-	//	return fmt.Errorf("cannot use %v with type %s, only channel supported", c, outType)
-	//}
-	//defer outValue.Close()
 	defer close(c)
 
-	headers, err := decoder.GetCSVRow()
+	headers, err := r.reader.Read()
 	if err != nil {
 		return err
 	}
@@ -179,7 +171,7 @@ func (r *XsvReader[T]) ReadEach(c chan T) error {
 	}
 	i := 0
 	for {
-		line, err := decoder.GetCSVRow()
+		line, err := r.reader.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -204,16 +196,13 @@ func (r *XsvReader[T]) ReadEach(c chan T) error {
 }
 
 func (r *XsvReader[T]) ReadToWithoutHeaders(out *[]T) error {
-	decoder := csvDecoder{r.reader}
 	outValue, outType := getConcreteReflectValueAndType(out) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	if err := ensureOutType(outType); err != nil {
-		return err
-	}
+
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
 	if err := ensureOutInnerType(outInnerType); err != nil {
 		return err
 	}
-	csvRows, err := decoder.GetCSVRows() // Get the CSV csvRows
+	csvRows, err := r.reader.ReadAll() // Get the CSV csvRows
 	if err != nil {
 		return err
 	}
@@ -248,12 +237,7 @@ func (r *XsvReader[T]) ReadToWithoutHeaders(out *[]T) error {
 }
 
 func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
-	decoder := csvDecoder{r.reader}
 	outValue, outType := getConcreteReflectValueAndType(c) // Get the concrete type (not pointer) (Slice<?> or Array<?>)
-	//if err := ensureOutType(outType); err != nil { // TODO: 不要なら消す
-	//	return err
-	//}
-	//defer outValue.Close()
 	defer close(c)
 
 	outInnerWasPointer, outInnerType := getConcreteContainerInnerType(outType) // Get the concrete inner type (not pointer) (Container<"?">)
@@ -268,7 +252,7 @@ func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
 
 	i := 0
 	for {
-		line, err := decoder.GetCSVRow()
+		line, err := r.reader.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {

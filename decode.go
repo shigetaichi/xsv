@@ -6,27 +6,10 @@ import (
 	"reflect"
 )
 
-type CSVReader interface {
-	Read() ([]string, error)
-	ReadAll() ([][]string, error)
-}
-
-type csvDecoder struct {
-	CSVReader
-}
-
 var (
 	ErrEmptyCSVFile = errors.New("empty csv file given")
 	ErrNoStructTags = errors.New("no csv struct tags found")
 )
-
-func (c csvDecoder) GetCSVRows() ([][]string, error) {
-	return c.ReadAll()
-}
-
-func (c csvDecoder) GetCSVRow() ([]string, error) {
-	return c.Read()
-}
 
 func mismatchStructFields(structInfo []fieldInfo, headers []string) []string {
 	missing := make([]string, 0)

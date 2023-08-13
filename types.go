@@ -2,6 +2,7 @@ package xsv
 
 import (
 	"encoding"
+	"encoding/csv"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -19,6 +20,14 @@ var (
 	unmarshalerType            = reflect.TypeOf(new(TypeUnmarshaller)).Elem()
 	unmarshalCSVWithFieldsType = reflect.TypeOf(new(TypeUnmarshalCSVWithFields)).Elem()
 )
+
+type ErrorHandler func(*csv.ParseError) bool
+
+// Normalizer is a function that takes and returns a string. It is applied to
+// struct and header field values before they are compared. It can be used to alter
+// names for comparison. For instance, you could allow case insensitive matching
+// or convert '-' to '_'.
+type Normalizer func(string) string
 
 // TypeMarshaller is implemented by any value that has a MarshalCSV method
 // This converter is used to convert the value to it string representation

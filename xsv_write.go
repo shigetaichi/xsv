@@ -7,11 +7,11 @@ import (
 )
 
 type XsvWrite[T any] struct {
-	TagName             string
-	TagSeparator        string
+	TagName             string //key in the struct field's tag to scan
+	TagSeparator        string //separator string for multiple csv tags in struct fields
 	OmitHeaders         bool
-	SelectedColumnIndex []int
-	ColumnSorter        ColumnSorter
+	SelectedColumnIndex []int        // TODO: describe in comment
+	ColumnSorter        ColumnSorter // TODO: describe in comment
 	nameNormalizer      Normalizer
 }
 

@@ -11,38 +11,12 @@ import (
 	"reflect"
 )
 
-// FailIfDoubleHeaderNames indicates whether it is considered an error when a header name is repeated
-// in the csv header.
-var FailIfDoubleHeaderNames = false
-
-// ShouldAlignDuplicateHeadersWithStructFieldOrder indicates whether we should align duplicate CSV
-// headers per their alignment in the struct definition.
-var ShouldAlignDuplicateHeadersWithStructFieldOrder = false
-
-// Normalizer is a function that takes and returns a string. It is applied to
-// struct and header field values before they are compared. It can be used to alter
-// names for comparison. For instance, you could allow case insensitive matching
-// or convert '-' to '_'.
-type Normalizer func(string) string
-
-type ErrorHandler func(*csv.ParseError) bool
-
-// normalizeName function initially set to a nop Normalizer.
-var normalizeName = DefaultNameNormalizer()
-
-// DefaultNameNormalizer is a nop Normalizer.
-func DefaultNameNormalizer() Normalizer { return func(s string) string { return s } }
-
-// --------------------------------------------------------------------------
-// Marshal functions
-
 // --------------------------------------------------------------------------
 // Unmarshal functions
 
 // UnmarshalCSVToMap parses a CSV of 2 columns into a map.
-func UnmarshalCSVToMap(in CSVReader, out interface{}) error {
-	decoder := csvDecoder{in}
-	header, err := decoder.GetCSVRow()
+func UnmarshalCSVToMap(r *csv.Reader, out interface{}) error {
+	header, err := r.Read()
 	if err != nil {
 		return err
 	}
@@ -59,7 +33,7 @@ func UnmarshalCSVToMap(in CSVReader, out interface{}) error {
 	for {
 		key := reflect.New(keyType)
 		value := reflect.New(valueType)
-		line, err := decoder.GetCSVRow()
+		line, err := r.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -78,8 +52,8 @@ func UnmarshalCSVToMap(in CSVReader, out interface{}) error {
 
 // CSVToMap creates a simple map from a CSV of 2 columns.
 func CSVToMap(in io.Reader) (map[string]string, error) {
-	decoder := csvDecoder{csv.NewReader(in)}
-	header, err := decoder.GetCSVRow()
+	r := csv.NewReader(in)
+	header, err := r.Read()
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +62,7 @@ func CSVToMap(in io.Reader) (map[string]string, error) {
 	}
 	m := make(map[string]string)
 	for {
-		line, err := decoder.GetCSVRow()
+		line, err := r.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
