@@ -17,7 +17,7 @@ type XsvRead[T any] struct {
 	ErrorHandler                                    ErrorHandler
 }
 
-func NewXSVRead[T any]() *XsvRead[T] {
+func NewXsvRead[T any]() *XsvRead[T] {
 	return &XsvRead[T]{
 		TagName:                   "csv",
 		TagSeparator:              ",",

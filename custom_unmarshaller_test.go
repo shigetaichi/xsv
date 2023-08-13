@@ -30,7 +30,7 @@ func Test_CSV_Base(t *testing.T) {
 `
 
 	var rows []row
-	err := NewXSVRead[row]().SetStringReader(exampleCSV).ReadTo(&rows)
+	err := NewXsvRead[row]().SetStringReader(exampleCSV).ReadTo(&rows)
 	if err != nil {
 		t.Fatal(err.Error())
 	}
@@ -69,7 +69,7 @@ type TestStruct struct {
 func TestPanic(t *testing.T) {
 	line := "make,backups,test it"
 	var DataValues []TestStruct
-	err := NewXSVRead[TestStruct]().SetStringReader(line).ReadToWithoutHeaders(&DataValues)
+	err := NewXsvRead[TestStruct]().SetStringReader(line).ReadToWithoutHeaders(&DataValues)
 	if err != nil {
 		t.Fatal(err)
 	}

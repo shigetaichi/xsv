@@ -33,7 +33,7 @@ func Test_writeTo(t *testing.T) {
 		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
 
-	xsvWrite := NewXSVWrite[Sample]()
+	xsvWrite := NewXsvWrite[Sample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func Test_writeTo_Time(t *testing.T) {
 		{Foo: d},
 	}
 
-	xsvWrite := NewXSVWrite[DateTime]()
+	xsvWrite := NewXsvWrite[DateTime]()
 	xsvWrite.OmitHeaders = true
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
@@ -94,7 +94,7 @@ func Test_writeTo_NoHeaders(t *testing.T) {
 		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
 		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
 	}
-	xsvWrite := NewXSVWrite[Sample]()
+	xsvWrite := NewXsvWrite[Sample]()
 	xsvWrite.OmitHeaders = true
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
@@ -118,7 +118,7 @@ func Test_writeTo_multipleTags(t *testing.T) {
 		{Foo: "abc", Bar: 123},
 		{Foo: "def", Bar: 234},
 	}
-	xsvWrite := NewXSVWrite[MultiTagSample]()
+	xsvWrite := NewXsvWrite[MultiTagSample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func Test_writeTo_slice(t *testing.T) {
 		},
 	}
 
-	xsvWrite := NewXSVWrite[TestType]()
+	xsvWrite := NewXsvWrite[TestType]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func Test_writeTo_slice_structs(t *testing.T) {
 		},
 	}
 
-	xsvWrite := NewXSVWrite[SliceStructSample]()
+	xsvWrite := NewXsvWrite[SliceStructSample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,7 @@ func Test_writeTo_embed(t *testing.T) {
 			Grault: math.Pi,
 		},
 	}
-	xsvWrite := NewXSVWrite[EmbedSample]()
+	xsvWrite := NewXsvWrite[EmbedSample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +254,7 @@ func Test_writeTo_embedptr(t *testing.T) {
 		},
 	}
 
-	xsvWrite := NewXSVWrite[EmbedPtrSample]()
+	xsvWrite := NewXsvWrite[EmbedPtrSample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -277,7 +277,7 @@ func Test_writeTo_embedptr_nil(t *testing.T) {
 		{},
 	}
 
-	xsvWrite := NewXSVWrite[EmbedPtrSample]()
+	xsvWrite := NewXsvWrite[EmbedPtrSample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -302,7 +302,7 @@ func Test_writeTo_embedmarshal(t *testing.T) {
 		},
 	}
 
-	xsvWrite := NewXSVWrite[EmbedMarshal]()
+	xsvWrite := NewXsvWrite[EmbedMarshal]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -335,7 +335,7 @@ func Test_writeTo_embedmarshalCSV(t *testing.T) {
 	}
 
 	// Next, attempt to Write our test data to a CSV format
-	xsvWrite := NewXSVWrite[*EmbedMarshalCSV]()
+	xsvWrite := NewXsvWrite[*EmbedMarshalCSV]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -380,7 +380,7 @@ func Test_writeTo_complex_embed(t *testing.T) {
 		},
 	}
 
-	xsvWrite := NewXSVWrite[SkipFieldSample]()
+	xsvWrite := NewXsvWrite[SkipFieldSample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(sfs); err != nil {
 		t.Fatal(err)
 	}
@@ -423,7 +423,7 @@ func Test_writeTo_complex_inner_struct_embed(t *testing.T) {
 		},
 	}
 
-	xsvWrite := NewXSVWrite[Level0Struct]()
+	xsvWrite := NewXsvWrite[Level0Struct]()
 	xsvWrite.OmitHeaders = true
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(sfs); err != nil {
 		t.Fatal(err)
@@ -439,7 +439,7 @@ func Test_writeTo_complex_inner_struct_embed(t *testing.T) {
 func Test_writeToChan(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
-	xsvWrite := NewXSVWrite[Sample]()
+	xsvWrite := NewXsvWrite[Sample]()
 	sampleChan := make(chan Sample)
 	sptr := "*string"
 	go func() {
@@ -473,7 +473,7 @@ func Test_writeToChan(t *testing.T) {
 func Test_MarshalChan_ClosedChannel(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
-	xsvWrite := NewXSVWrite[Sample]()
+	xsvWrite := NewXsvWrite[Sample]()
 	sampleChan := make(chan Sample)
 	close(sampleChan)
 
@@ -489,7 +489,7 @@ func TestRenamedTypesMarshal(t *testing.T) {
 		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
 	}
 
-	xsvWrite := NewXSVWrite[RenamedSample]()
+	xsvWrite := NewXsvWrite[RenamedSample]()
 
 	bufferString := bytes.NewBufferString("")
 
@@ -520,7 +520,7 @@ func TestCustomTagSeparatorMarshal(t *testing.T) {
 		{RenamedFloatUnmarshaler: 2.3, RenamedFloatDefault: 2.4},
 	}
 
-	xsvWrite := NewXSVWrite[RenamedSample]()
+	xsvWrite := NewXsvWrite[RenamedSample]()
 
 	bufferString := bytes.NewBufferString("")
 	err := xsvWrite.SetBufferWriter(bufferString).Comma('|').Write(samples)
@@ -553,7 +553,7 @@ func (e MarshalError) Error() string {
 func Benchmark_MarshalCSVWithoutHeaders(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 
-		xsvWrite := NewXSVWrite[Sample]()
+		xsvWrite := NewXsvWrite[Sample]()
 		err := xsvWrite.SetWriter(csv.NewWriter(io.Discard)).Write([]Sample{})
 		if err != nil {
 			return
@@ -592,7 +592,7 @@ func Test_writeTo_nested_struct(t *testing.T) {
 		},
 	}
 
-	xsvWrite := NewXSVWrite[NestedSample]()
+	xsvWrite := NewXsvWrite[NestedSample]()
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}

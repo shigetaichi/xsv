@@ -27,7 +27,7 @@ func TestUnmarshalListOfStructsAfterMarshal(t *testing.T) {
 	buffer := new(bytes.Buffer)
 	innerWriter := csv.NewWriter(buffer)
 	innerWriter.Comma = '|'
-	xsvWrite := NewXSVWrite[*Option]()
+	xsvWrite := NewXsvWrite[*Option]()
 	err := xsvWrite.SetWriter(innerWriter).Write(inData)
 	if err != nil {
 		t.Fatalf("Error marshalling data to CSV: %#v", err)
@@ -41,7 +41,7 @@ func TestUnmarshalListOfStructsAfterMarshal(t *testing.T) {
 	var outData []*Option
 	innerReader := csv.NewReader(buffer)
 	innerReader.Comma = '|'
-	if err := NewXSVRead[*Option]().SetReader(innerReader).ReadTo(&outData); err != nil {
+	if err := NewXsvRead[*Option]().SetReader(innerReader).ReadTo(&outData); err != nil {
 		t.Fatalf("Error unmarshalling data from CSV: %#v", err)
 	}
 

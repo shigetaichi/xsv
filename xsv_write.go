@@ -15,7 +15,7 @@ type XsvWrite[T any] struct {
 	nameNormalizer      Normalizer
 }
 
-func NewXSVWrite[T any]() XsvWrite[T] {
+func NewXsvWrite[T any]() XsvWrite[T] {
 	return XsvWrite[T]{
 		TagName:             "csv",
 		TagSeparator:        ",",
