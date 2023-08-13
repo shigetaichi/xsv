@@ -15,8 +15,8 @@ import (
 // Conversion interfaces
 
 var (
-	marshalerType              = reflect.TypeOf(new(TypeMarshaller)).Elem()
-	textMarshalerType          = reflect.TypeOf(new(encoding.TextMarshaler)).Elem()
+	marshallerType             = reflect.TypeOf(new(TypeMarshaller)).Elem()
+	textMarshallerType         = reflect.TypeOf(new(encoding.TextMarshaler)).Elem()
 	unmarshalerType            = reflect.TypeOf(new(TypeUnmarshaller)).Elem()
 	unmarshalCSVWithFieldsType = reflect.TypeOf(new(TypeUnmarshalCSVWithFields)).Elem()
 )
@@ -405,8 +405,8 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 
 func canMarshal(t reflect.Type) bool {
 	// Struct that implements any of the text or CSV marshaling interfaces
-	if t.Implements(marshalerType) ||
-		t.Implements(textMarshalerType) ||
+	if t.Implements(marshallerType) ||
+		t.Implements(textMarshallerType) ||
 		t.Implements(unmarshalerType) ||
 		t.Implements(unmarshalCSVWithFieldsType) {
 		return true
@@ -414,8 +414,8 @@ func canMarshal(t reflect.Type) bool {
 
 	// Pointer to a struct that implements any of the text or CSV marshaling interfaces
 	t = reflect.PtrTo(t)
-	if t.Implements(marshalerType) ||
-		t.Implements(textMarshalerType) ||
+	if t.Implements(marshallerType) ||
+		t.Implements(textMarshallerType) ||
 		t.Implements(unmarshalerType) ||
 		t.Implements(unmarshalCSVWithFieldsType) {
 		return true
@@ -464,15 +464,15 @@ func marshall(field reflect.Value) (value string, err error) {
 			fieldIface := finalField.Interface()
 
 			// Use TypeMarshaller when possible
-			fieldTypeMarhaller, ok := fieldIface.(TypeMarshaller)
+			fieldTypeMarshaller, ok := fieldIface.(TypeMarshaller)
 			if ok {
-				return fieldTypeMarhaller.MarshalCSV()
+				return fieldTypeMarshaller.MarshalCSV()
 			}
 
 			// Otherwise try to use TextMarshaller
-			fieldTextMarshaler, ok := fieldIface.(encoding.TextMarshaler)
+			fieldTextMarshaller, ok := fieldIface.(encoding.TextMarshaler)
 			if ok {
-				text, err := fieldTextMarshaler.MarshalText()
+				text, err := fieldTextMarshaller.MarshalText()
 				return string(text), err
 			}
 
