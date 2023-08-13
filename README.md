@@ -5,8 +5,8 @@ Most of the programs related to csv generation and reading are created from code
 
 > Copyright (c) 2014 Jonathan Picques
 > https://github.com/gocarina/gocsv
-
-※　xsv does not include gocsv.
+ 
+※xsv does not include gocsv.
 
 ## 🚧Under Construction
 there is a lot of things to do before release.
@@ -23,7 +23,7 @@ go get github.com/shigetaichi/xsv
 package main
 
 import (
-    "os"
+	"os"
 	"xsv"
 )
 
@@ -48,11 +48,26 @@ func main() {
 		panic(err)
 	}
 	defer clientsFile.Close()
-	
-	xsvWrite := xsv.NewXSVWrite[*Client]()
+
+	// instancing xsvWrite struct
+	xsvWrite := xsv.NewXsvWrite[*Client]()
+	// change some preferences
+	xsvWrite.OmitHeaders = true
+	// set writer and write!
 	err = xsvWrite.SetFileWriter(clientsFile).Write(clients)
 	if err != nil {
 		return
+	}
+
+	// instancing xsvRead struct
+	xsvRead := xsv.NewXsvRead[*Client]()
+	// change some preferences
+	xsvRead.TagName = "xsv"
+	// set reader and read!
+	var clientOutput []*Client
+	err = xsvRead.SetFileReader(clientsFile).ReadTo(&clientOutput)
+	if err != nil {
+		return 
 	}
 }
 
