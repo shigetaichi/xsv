@@ -8,9 +8,6 @@ Most of the programs related to csv generation and reading are created from code
  
 ※xsv does not include gocsv.
 
-## 🚧Under Construction
-there is a lot of things to do before release.
-
 ## Getting Started
 
 ```
