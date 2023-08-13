@@ -296,3 +296,50 @@ func (r *XsvReader[T]) ReadToCallback(f func(s T) error) error {
 		}
 	}
 }
+
+func (r *XsvReader[T]) ToMap() ([]map[string]string, error) {
+	var rows []map[string]string
+	var header []string
+	for {
+		record, err := r.reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		if header == nil {
+			header = record
+		} else {
+			dict := map[string]string{}
+			for i := range header {
+				dict[header[i]] = record[i]
+			}
+			rows = append(rows, dict)
+		}
+	}
+	return rows, nil
+}
+
+func (r *XsvReader[T]) ToChanMaps(c chan<- map[string]string) error {
+	var header []string
+	for {
+		record, err := r.reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if header == nil {
+			header = record
+		} else {
+			dict := map[string]string{}
+			for i := range header {
+				dict[header[i]] = record[i]
+			}
+			c <- dict
+		}
+	}
+	return nil
+}

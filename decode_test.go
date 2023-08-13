@@ -761,7 +761,7 @@ func TestCSVToMaps(t *testing.T) {
 4,Jose,42
 2,Daniel,21
 5,Vincent,84`)
-	m, err := CSVToMaps(bytes.NewReader(b.Bytes()))
+	m, err := NewXSVRead[interface{}]().SetReader(csv.NewReader(b)).ToMap()
 	if err != nil {
 		t.Fatal(err)
 	}
