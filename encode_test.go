@@ -607,3 +607,36 @@ func Test_writeTo_nested_struct(t *testing.T) {
 	assertLine(t, []string{"one.boolField1", "one.stringField2", "two.boolField1", "two.stringField2", "three.boolField1", "three.stringField2"}, lines[0])
 	assertLine(t, []string{"false", "email_one", "true", "email_two", "false", "email_three"}, lines[1])
 }
+
+func Test_writeTo_emptyptr_selectedColumns(t *testing.T) {
+
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	blah := 2
+	sptr := "*string"
+	s := []EmbedPtrSample{
+		{
+			Qux:    "aaa",
+			Sample: &Sample{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.2, Blah: &blah, SPtr: &sptr},
+			Ignore: "shouldn't be marshalled",
+			Quux:   "zzz",
+			Grault: math.Pi,
+		},
+	}
+
+	xsvWrite := NewXsvWrite[EmbedPtrSample]()
+	xsvWrite.SelectedColumns = []string{"first", "-", "Baz", "last"} //　If a "-" exists here, it will not be output.
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"first", "Baz", "last"}, lines[0])
+	assertLine(t, []string{"aaa", "baz", "zzz"}, lines[1])
+}
