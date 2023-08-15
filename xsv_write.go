@@ -30,11 +30,7 @@ func NewXsvWrite[T any]() XsvWrite[T] {
 }
 
 func (x *XsvWrite[T]) checkSortOrderSlice(outputFieldsCount int) error {
-	if len(x.SelectedColumns) > 0 {
-		if len(x.SortOrder) != len(x.SelectedColumns) {
-			return errors.New("the length of the SortOrder array should be equal to the length of the SelectedColumns array")
-		}
-	} else {
+	if len(x.SortOrder) > 0 {
 		if len(x.SortOrder) != outputFieldsCount {
 			return errors.New(fmt.Sprintf("the length of the SortOrder array should be equal to the number of items to be output(%d)", outputFieldsCount))
 		}
