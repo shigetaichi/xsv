@@ -625,7 +625,7 @@ func Test_writeTo_emptyptr_selectedColumns(t *testing.T) {
 	}
 
 	xsvWrite := NewXsvWrite[EmbedPtrSample]()
-	xsvWrite.selectedColumns = []string{"first", "-", "Baz", "last"} //　If a "-" exists here, it will not be output.
+	xsvWrite.SelectedColumns = []string{"first", "-", "Baz", "last"} //　If a "-" exists here, it will not be output.
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
