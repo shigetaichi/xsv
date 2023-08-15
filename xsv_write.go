@@ -3,6 +3,8 @@ package xsv
 import (
 	"bytes"
 	"encoding/csv"
+	"errors"
+	"fmt"
 	"os"
 	"slices"
 )
@@ -11,11 +13,10 @@ type XsvWrite[T any] struct {
 	TagName         string //key in the struct field's tag to scan
 	TagSeparator    string //separator string for multiple csv tags in struct fields
 	OmitHeaders     bool
-	SelectedColumns []string     // slice of field names to output
-	columnSorter    ColumnSorter // TODO: describe in comment
+	SelectedColumns []string // slice of field names to output
+	SortOrder       []int    // column sort order
 	nameNormalizer  Normalizer
 }
-type ColumnSorter = func(row []string) []string
 
 func NewXsvWrite[T any]() XsvWrite[T] {
 	return XsvWrite[T]{
@@ -23,11 +24,22 @@ func NewXsvWrite[T any]() XsvWrite[T] {
 		TagSeparator:    ",",
 		OmitHeaders:     false,
 		SelectedColumns: make([]string, 0),
-		columnSorter: func(row []string) []string {
-			return row
-		},
-		nameNormalizer: func(s string) string { return s },
+		SortOrder:       make([]int, 0),
+		nameNormalizer:  func(s string) string { return s },
 	}
+}
+
+func (x *XsvWrite[T]) checkSortOrderSlice(outputFieldsCount int) error {
+	if len(x.SelectedColumns) > 0 {
+		if len(x.SortOrder) != len(x.SelectedColumns) {
+			return errors.New("the length of the SortOrder array should be equal to the length of the SelectedColumns array")
+		}
+	} else {
+		if len(x.SortOrder) != outputFieldsCount {
+			return errors.New(fmt.Sprintf("the length of the SortOrder array should be equal to the number of items to be output(%d)", outputFieldsCount))
+		}
+	}
+	return nil
 }
 
 func (x *XsvWrite[T]) getSelectedFieldInfos(fieldInfos []fieldInfo) []fieldInfo {

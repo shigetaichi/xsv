@@ -40,7 +40,10 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
-	csvHeadersLabels = xw.columnSorter(csvHeadersLabels)
+	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
+		return err
+	}
+	csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 	if !xw.OmitHeaders {
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
@@ -56,7 +59,7 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 			}
 			csvHeadersLabels[j] = inInnerFieldValue
 		}
-		csvHeadersLabels = xw.columnSorter(csvHeadersLabels)
+		csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
 		}
@@ -83,6 +86,11 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to Write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
+
+	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
+		return err
+	}
+	csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 	if !xw.OmitHeaders {
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
@@ -96,7 +104,7 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 				return err
 			}
 			csvHeadersLabels[j] = inInnerFieldValue
-			csvHeadersLabels = xw.columnSorter(csvHeadersLabels)
+			csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 		}
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
@@ -117,4 +125,16 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 	}
 	xw.writer.Flush()
 	return xw.writer.Error()
+}
+
+func reorderColumns(row []string, sortOrder []int) []string {
+	if len(sortOrder) > 0 {
+		newLine := make([]string, len(row))
+		for from, to := range sortOrder {
+			newLine[to] = row[from]
+		}
+		return newLine
+	} else {
+		return row
+	}
 }
