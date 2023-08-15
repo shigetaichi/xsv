@@ -640,3 +640,36 @@ func Test_writeTo_emptyptr_selectedColumns(t *testing.T) {
 	assertLine(t, []string{"first", "Baz", "last"}, lines[0])
 	assertLine(t, []string{"aaa", "baz", "zzz"}, lines[1])
 }
+
+func Test_writeTo_emptyptr_sortOrder(t *testing.T) {
+
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	blah := 2
+	sptr := "*string"
+	s := []EmbedPtrSample{
+		{
+			Qux:    "aaa",
+			Sample: &Sample{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.2, Blah: &blah, SPtr: &sptr},
+			Ignore: "shouldn't be marshalled",
+			Quux:   "zzz",
+			Grault: math.Pi,
+		},
+	}
+
+	xsvWrite := NewXsvWrite[EmbedPtrSample]()
+	xsvWrite.SortOrder = []int{1, 0, 2, 3, 4, 5, 6, 7, 8, 9}
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"foo", "first", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "garply", "last"}, lines[0])
+	assertLine(t, []string{"f", "aaa", "1", "baz", "0.2", "2", "*string", "", "3.141592653589793", "zzz"}, lines[1])
+}
