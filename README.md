@@ -8,13 +8,13 @@ Most of the programs related to csv generation and reading are created from code
  
 ※xsv does not include gocsv.
 
-## Getting Started
+## 🚀Getting Started
 
 ```
 go get github.com/shigetaichi/xsv
 ```
 
-## Usage
+## 🔨Usage
 
 ```go
 package main
@@ -69,3 +69,24 @@ func main() {
 }
 
 ```
+
+## 🛠️Details
+### XsvWrite
+| FieldName       | Type     | Description                                                   |
+|-----------------|----------|---------------------------------------------------------------|
+| TagName         | string   | key in the struct field's tag to scan                         |
+| TagSeparator    | string   | separator string for multiple csv tags in struct fields       |
+| OmitHeaders     | bool     | whether to output headers to csv or not                       |
+| SelectedColumns | []string | slice of field names(which is set in "TagName" tag) to output |
+| SortOrder       | []uint   | column sort order                                             |
+|                 |          |                                                               |
+
+### XsvRead
+| FieldName                                       | Type                            | Description                                                                                                                                                                                                                                                      |
+|-------------------------------------------------|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| TagName                                         | string                          | key in the struct field's tag to scan                                                                                                                                                                                                                            |
+| TagSeparator                                    | string                          | separator string for multiple csv tags in struct fields                                                                                                                                                                                                          |
+| FailIfUnmatchedStructTags                       | bool                            | indicates whether it is considered an error when there is an unmatched struct tag.                                                                                                                                                                               |
+| FailIfDoubleHeaderNames                         | bool                            | indicates whether it is considered an error when a header name is repeated in the csv header.                                                                                                                                                                    |
+| ShouldAlignDuplicateHeadersWithStructFieldOrder | bool                            | indicates whether we should align duplicate CSV headers per their alignment in the struct definition.                                                                                                                                                            |
+| NameNormalizer                                  | Normalizer(func(string) string) | Normalizer is a function that takes and returns a string. It is applied to struct and header field values before they are compared. It can be used to alter names for comparison. For instance, you could allow case insensitive matching or convert '-' to '_'. |
