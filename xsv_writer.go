@@ -126,7 +126,7 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 }
 
 func reorderColumns[T any](row []T, sortOrder []int) []T {
-	if len(sortOrder) > 0 {
+	if len(sortOrder) > 1 {
 		newLine := make([]T, len(row))
 		for from, to := range sortOrder {
 			newLine[to] = row[from]
