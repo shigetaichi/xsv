@@ -658,7 +658,7 @@ func Test_writeTo_emptyptr_sortOrder(t *testing.T) {
 	}
 
 	xsvWrite := NewXsvWrite[EmbedPtrSample]()
-	xsvWrite.SortOrder = []int{1, 0, 2, 3, 4, 5, 6, 7, 8, 9}
+	xsvWrite.SortOrder = []int{1, 0, 2, 3, 4, 5, 6, 7, 9, 8}
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
 		t.Fatal(err)
 	}
@@ -670,6 +670,41 @@ func Test_writeTo_emptyptr_sortOrder(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines, got %d", len(lines))
 	}
-	assertLine(t, []string{"foo", "first", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "garply", "last"}, lines[0])
-	assertLine(t, []string{"f", "aaa", "1", "baz", "0.2", "2", "*string", "", "3.141592653589793", "zzz"}, lines[1])
+	assertLine(t, []string{"foo", "first", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit", "last", "garply"}, lines[0])
+	assertLine(t, []string{"f", "aaa", "1", "baz", "0.2", "2", "*string", "", "zzz", "3.141592653589793"}, lines[1])
+}
+
+func Test_writeToChan_emptyptr_sortOrder(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	sampleChan := make(chan Sample)
+	sptr := "*string"
+	go func() {
+		for i := 0; i < 100; i++ {
+			v := Sample{Foo: "f", Bar: i, Baz: "baz" + strconv.Itoa(i), Frop: float64(i), Blah: nil, SPtr: &sptr}
+			sampleChan <- v
+		}
+		close(sampleChan)
+	}()
+
+	xsvWrite := NewXsvWrite[Sample]()
+	xsvWrite.SortOrder = []int{1, 0, 2, 3, 4, 5, 6}
+	err := xsvWrite.SetWriter(csv.NewWriter(e.out)).WriteFromChan(sampleChan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 101 {
+		t.Fatalf("expected 100 lines, got %d", len(lines))
+	}
+	for i, l := range lines {
+		if i == 0 {
+			assertLine(t, []string{"BAR", "foo", "Baz", "Quux", "Blah", "SPtr", "Omit"}, l)
+			continue
+		}
+		assertLine(t, []string{strconv.Itoa(i - 1), "f", "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), "", "*string", ""}, l)
+	}
 }
