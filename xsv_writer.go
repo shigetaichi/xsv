@@ -34,15 +34,15 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 
 	fieldInfos := getFieldInfos(inInnerType, []int{}, []string{}, xw.TagName, xw.TagSeparator, xw.nameNormalizer) // Get the inner struct info to get CSV annotations
 	fieldInfos = xw.getSelectedFieldInfos(fieldInfos)
+	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
+		return err
+	}
 	fieldInfos = reorderColumns[fieldInfo](fieldInfos, xw.SortOrder)
 	inInnerStructInfo := &structInfo{fieldInfos}
 
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
-	}
-	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
-		return err
 	}
 	if !xw.OmitHeaders {
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
@@ -80,6 +80,9 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 	inInnerWasPointer := inType.Kind() == reflect.Ptr
 	fieldInfos := getFieldInfos(inType, []int{}, []string{}, xw.TagName, xw.TagSeparator, xw.nameNormalizer) // Get the inner struct info to get CSV annotations
 	fieldInfos = xw.getSelectedFieldInfos(fieldInfos)
+	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
+		return err
+	}
 	fieldInfos = reorderColumns[fieldInfo](fieldInfos, xw.SortOrder)
 	inInnerStructInfo := &structInfo{fieldInfos}
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
@@ -87,9 +90,6 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
 
-	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
-		return err
-	}
 	if !xw.OmitHeaders {
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
