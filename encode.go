@@ -75,15 +75,3 @@ func getInnerField(outInner reflect.Value, outInnerWasPointer bool, index []int)
 	}
 	return getFieldAsString(oi.FieldByIndex(index))
 }
-
-func getPickedFields(fields []fieldInfo, columnFieldsIndexes []int) []fieldInfo {
-	var newFields []fieldInfo
-	if len(columnFieldsIndexes) > 0 {
-		for _, columnFieldsIndex := range columnFieldsIndexes {
-			newFields = append(newFields, fields[columnFieldsIndex])
-		}
-	} else {
-		newFields = fields
-	}
-	return newFields
-}

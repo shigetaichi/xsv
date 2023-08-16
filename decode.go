@@ -141,7 +141,10 @@ func setInnerField(outInner *reflect.Value, outInnerWasPointer bool, index []int
 	if outInnerWasPointer {
 		// initialize nil pointer
 		if oi.IsNil() {
-			setField(oi, "", omitEmpty)
+			err := setField(oi, "", omitEmpty)
+			if err != nil {
+				return err
+			}
 		}
 		oi = outInner.Elem()
 	}

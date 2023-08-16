@@ -34,16 +34,16 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 
 	fieldInfos := getFieldInfos(inInnerType, []int{}, []string{}, xw.TagName, xw.TagSeparator, xw.nameNormalizer) // Get the inner struct info to get CSV annotations
 	fieldInfos = xw.getSelectedFieldInfos(fieldInfos)
+	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
+		return err
+	}
+	fieldInfos = reorderColumns[fieldInfo](fieldInfos, xw.SortOrder)
 	inInnerStructInfo := &structInfo{fieldInfos}
 
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
-	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
-		return err
-	}
-	csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 	if !xw.OmitHeaders {
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
@@ -59,7 +59,6 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 			}
 			csvHeadersLabels[j] = inInnerFieldValue
 		}
-		csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
 		}
@@ -81,16 +80,16 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 	inInnerWasPointer := inType.Kind() == reflect.Ptr
 	fieldInfos := getFieldInfos(inType, []int{}, []string{}, xw.TagName, xw.TagSeparator, xw.nameNormalizer) // Get the inner struct info to get CSV annotations
 	fieldInfos = xw.getSelectedFieldInfos(fieldInfos)
+	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
+		return err
+	}
+	fieldInfos = reorderColumns[fieldInfo](fieldInfos, xw.SortOrder)
 	inInnerStructInfo := &structInfo{fieldInfos}
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to Write the header (first line) in CSV
 		csvHeadersLabels[i] = fieldInfo.getFirstKey()
 	}
 
-	if err := xw.checkSortOrderSlice(len(fieldInfos)); err != nil {
-		return err
-	}
-	csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 	if !xw.OmitHeaders {
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
@@ -104,7 +103,6 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 				return err
 			}
 			csvHeadersLabels[j] = inInnerFieldValue
-			csvHeadersLabels = reorderColumns(csvHeadersLabels, xw.SortOrder)
 		}
 		if err := xw.writer.Write(csvHeadersLabels); err != nil {
 			return err
@@ -127,9 +125,9 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 	return xw.writer.Error()
 }
 
-func reorderColumns(row []string, sortOrder []int) []string {
-	if len(sortOrder) > 0 {
-		newLine := make([]string, len(row))
+func reorderColumns[T any](row []T, sortOrder []int) []T {
+	if len(sortOrder) > 1 {
+		newLine := make([]T, len(row))
 		for from, to := range sortOrder {
 			newLine[to] = row[from]
 		}
