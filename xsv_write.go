@@ -16,6 +16,7 @@ type XsvWrite[T any] struct {
 	SelectedColumns []string // slice of field names to output
 	SortOrder       []int    // column sort order
 	nameNormalizer  Normalizer
+	HeaderModifier  map[string]string
 }
 
 func NewXsvWrite[T any]() XsvWrite[T] {
@@ -26,6 +27,7 @@ func NewXsvWrite[T any]() XsvWrite[T] {
 		SelectedColumns: make([]string, 0),
 		SortOrder:       make([]int, 0),
 		nameNormalizer:  func(s string) string { return s },
+		HeaderModifier:  map[string]string{},
 	}
 }
 
