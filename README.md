@@ -84,7 +84,6 @@ func main() {
 | OmitHeaders     | bool     | whether to output headers to csv or not                       |
 | SelectedColumns | []string | slice of field names(which is set in "TagName" tag) to output |
 | SortOrder       | []uint   | column sort order                                             |
-|                 |          |                                                               |
 
 ### XsvRead
 | FieldName                                       | Type                            | Description                                                                                                                                                                                                                                                      |
