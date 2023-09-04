@@ -42,12 +42,10 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to write the header (first line) in CSV
-		csvHeadersLabels[i] = fieldInfo.getFirstKey()
-
-		for originalHeader, updatedHeader := range xw.HeaderModifier { // modify header name dynamically
-			if originalHeader == fieldInfo.getFirstKey() {
-				csvHeadersLabels[i] = updatedHeader
-			}
+		if newHeader, ok := xw.HeaderModifier[fieldInfo.getFirstKey()]; ok { // modify header name dynamically
+			csvHeadersLabels[i] = newHeader
+		} else {
+			csvHeadersLabels[i] = fieldInfo.getFirstKey()
 		}
 	}
 	if !xw.OmitHeaders {
@@ -93,12 +91,10 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 	inInnerStructInfo := &structInfo{fieldInfos}
 	csvHeadersLabels := make([]string, len(inInnerStructInfo.Fields))
 	for i, fieldInfo := range inInnerStructInfo.Fields { // Used to Write the header (first line) in CSV
-		csvHeadersLabels[i] = fieldInfo.getFirstKey()
-
-		for originalHeader, updatedHeader := range xw.HeaderModifier { // modify header name dynamically
-			if originalHeader == fieldInfo.getFirstKey() {
-				csvHeadersLabels[i] = updatedHeader
-			}
+		if newHeader, ok := xw.HeaderModifier[fieldInfo.getFirstKey()]; ok { // modify header name dynamically
+			csvHeadersLabels[i] = newHeader
+		} else {
+			csvHeadersLabels[i] = fieldInfo.getFirstKey()
 		}
 	}
 
