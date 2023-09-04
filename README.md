@@ -1,4 +1,5 @@
 # xsv
+
 csv handling package written in go
 
 [![Licence](https://img.shields.io/github/license/shigetaichi/xsv)](https://github.com/shigetaichi/xsv/blob/main/LICENSE)
@@ -10,7 +11,7 @@ Most of the programs related to csv generation and reading are created from code
 
 > Copyright (c) 2014 Jonathan Picques
 > https://github.com/gocarina/gocsv
- 
+
 ※xsv does not include gocsv.
 
 ## 🚀Getting Started
@@ -69,23 +70,27 @@ func main() {
 	var clientOutput []*Client
 	err = xsvRead.SetFileReader(clientsFile).ReadTo(&clientOutput)
 	if err != nil {
-		return 
+		return
 	}
 }
 
 ```
 
 ## 🛠️Details
+
 ### XsvWrite
-| FieldName       | Type     | Description                                                   |
-|-----------------|----------|---------------------------------------------------------------|
-| TagName         | string   | key in the struct field's tag to scan                         |
-| TagSeparator    | string   | separator string for multiple csv tags in struct fields       |
-| OmitHeaders     | bool     | whether to output headers to csv or not                       |
-| SelectedColumns | []string | slice of field names(which is set in "TagName" tag) to output |
-| SortOrder       | []uint   | column sort order                                             |
+
+| FieldName       | Type              | Description                                                   |
+|-----------------|-------------------|---------------------------------------------------------------|
+| TagName         | string            | key in the struct field's tag to scan                         |
+| TagSeparator    | string            | separator string for multiple csv tags in struct fields       |
+| OmitHeaders     | bool              | whether to output headers to csv or not                       |
+| SelectedColumns | []string          | slice of field names(which is set in "TagName" tag) to output |
+| SortOrder       | []uint            | column sort order                                             |
+| HeaderModifier  | map[string]string | map to dynamically change headers                             |
 
 ### XsvRead
+
 | FieldName                                       | Type                            | Description                                                                                                                                                                                                                                                      |
 |-------------------------------------------------|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | TagName                                         | string                          | key in the struct field's tag to scan                                                                                                                                                                                                                            |
