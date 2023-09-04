@@ -13,8 +13,9 @@ type XsvWrite[T any] struct {
 	TagName         string //key in the struct field's tag to scan
 	TagSeparator    string //separator string for multiple csv tags in struct fields
 	OmitHeaders     bool
-	SelectedColumns []string // slice of field names to output
-	SortOrder       []int    // column sort order
+	SelectedColumns []string          // slice of field names to output
+	SortOrder       []int             // column sort order
+	HeaderModifier  map[string]string // map to dynamically change headers
 	nameNormalizer  Normalizer
 }
 
@@ -25,6 +26,7 @@ func NewXsvWrite[T any]() XsvWrite[T] {
 		OmitHeaders:     false,
 		SelectedColumns: make([]string, 0),
 		SortOrder:       make([]int, 0),
+		HeaderModifier:  map[string]string{},
 		nameNormalizer:  func(s string) string { return s },
 	}
 }
