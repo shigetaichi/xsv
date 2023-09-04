@@ -1,6 +1,11 @@
 # xsv
 csv handling package written in go
 
+[![Licence](https://img.shields.io/github/license/shigetaichi/xsv)](https://github.com/shigetaichi/xsv/blob/main/LICENSE)
+[![Code Size](https://img.shields.io/github/languages/code-size/shigetaichi/xsv)](https://github.com/shigetaichi/xsv)
+[![Release](https://img.shields.io/github/v/release/shigetaichi/xsv)](https://github.com/shigetaichi/xsv/releases)
+[![Github Stars](https://img.shields.io/github/stars/shigetaichi/xsv)](https://github.com/shigetaichi/xsv/stargazers)
+
 Most of the programs related to csv generation and reading are created from code in this repository.↓
 
 > Copyright (c) 2014 Jonathan Picques
