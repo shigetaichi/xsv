@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT license
 // The license can be found in the LICENSE file.
 
+// Package xsv aims to provide easy CSV serialization and deserialization to the golang programming language
 package xsv
 
 import (
