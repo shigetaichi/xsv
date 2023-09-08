@@ -9,6 +9,7 @@ import (
 	"slices"
 )
 
+// XsvWrite manages configuration values related to the csv write process.
 type XsvWrite[T any] struct {
 	TagName         string //key in the struct field's tag to scan
 	TagSeparator    string //separator string for multiple csv tags in struct fields
@@ -19,6 +20,7 @@ type XsvWrite[T any] struct {
 	nameNormalizer  Normalizer
 }
 
+// NewXsvWrite creates a new XsvWrite struct with default configuration values
 func NewXsvWrite[T any]() XsvWrite[T] {
 	return XsvWrite[T]{
 		TagName:         "csv",

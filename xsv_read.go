@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// XsvRead manages configuration values related to the csv read process.
 type XsvRead[T any] struct {
 	TagName                                         string //key in the struct field's tag to scan
 	TagSeparator                                    string //separator string for multiple csv tags in struct fields
@@ -17,6 +18,7 @@ type XsvRead[T any] struct {
 	ErrorHandler                                    ErrorHandler
 }
 
+// NewXsvRead creates a new XsvRead struct with default configuration values
 func NewXsvRead[T any]() *XsvRead[T] {
 	return &XsvRead[T]{
 		TagName:                   "csv",
