@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/shigetaichi/xsv"
 	"os"
 	"sync"
 	"time"
-	"xsv"
 )
 
 type NotUsed struct {
