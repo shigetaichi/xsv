@@ -35,7 +35,19 @@ func (r *XsvReader[T]) ReadTo(out *[]T) error {
 	if len(csvRows) == 0 {
 		return ErrEmptyCSVFile
 	}
-	if err := ensureOutCapacity(&outValue, len(csvRows)); err != nil { // Ensure the container is big enough to hold the CSV content
+
+	if err := r.checkFromTo(); err != nil {
+		return err
+	}
+	to := r.To
+	if to >= 0 {
+		to++
+	} else {
+		to = len(csvRows)
+	}
+	body := csvRows[r.From:to]
+	capacity := len(body) + 1                                      // Plus one for the header row.
+	if err := ensureOutCapacity(&outValue, capacity); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
 	fieldInfos := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
@@ -48,7 +60,6 @@ func (r *XsvReader[T]) ReadTo(out *[]T) error {
 	for i, h := range csvRows[0] { // apply normalizer func to headers
 		headers[i] = r.NameNormalizer(h)
 	}
-	body := csvRows[1:]
 
 	csvHeadersLabels := make(map[int]*fieldInfo, len(outInnerStructInfo.Fields)) // Used to store the correspondance header <-> position in CSV
 
@@ -173,7 +184,11 @@ func (r *XsvReader[T]) ReadEach(c chan T) error {
 			return err
 		}
 	}
-	i := 0
+
+	if err := r.checkFromTo(); err != nil {
+		return err
+	}
+	i := 1
 	for {
 		line, err := r.reader.Read()
 		if err == io.EOF {
@@ -181,22 +196,25 @@ func (r *XsvReader[T]) ReadEach(c chan T) error {
 		} else if err != nil {
 			return err
 		}
-		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
-		for j, csvColumnContent := range line {
-			if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
-				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
-					return &csv.ParseError{
-						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
-						Column: j + 1,
-						Err:    err,
+
+		if r.From <= i && i <= r.To {
+			outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+			for j, csvColumnContent := range line {
+				if fieldInfo, ok := csvHeadersLabels[j]; ok { // Position found accordingly to header name
+					if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+						return &csv.ParseError{
+							Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+							Column: j + 1,
+							Err:    err,
+						}
 					}
 				}
 			}
+			if r.OnRecord != nil {
+				outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
+			}
+			outValue.Send(outInner)
 		}
-		if r.OnRecord != nil {
-			outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
-		}
-		outValue.Send(outInner)
 		i++
 	}
 	return nil
@@ -216,7 +234,19 @@ func (r *XsvReader[T]) ReadToWithoutHeaders(out *[]T) error {
 	if len(csvRows) == 0 {
 		return ErrEmptyCSVFile
 	}
-	if err := ensureOutCapacity(&outValue, len(csvRows)+1); err != nil { // Ensure the container is big enough to hold the CSV content
+
+	if err := r.checkFromTo(); err != nil {
+		return err
+	}
+	to := r.To
+	if to >= 0 {
+		to++
+	} else {
+		to = len(csvRows)
+	}
+	body := csvRows[r.From:to]
+	capacity := len(body) + 1
+	if err := ensureOutCapacity(&outValue, capacity); err != nil { // Ensure the container is big enough to hold the CSV content
 		return err
 	}
 	fieldInfos := getFieldInfos(outInnerType, []int{}, []string{}, r.TagName, r.TagSeparator, r.NameNormalizer) // Get the inner struct info to get CSV annotations
@@ -260,7 +290,10 @@ func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
 		return ErrNoStructTags
 	}
 
-	i := 0
+	if err := r.checkFromTo(); err != nil {
+		return err
+	}
+	i := 1
 	for {
 		line, err := r.reader.Read()
 		if err == io.EOF {
@@ -268,21 +301,23 @@ func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
 		} else if err != nil {
 			return err
 		}
-		outInner := createNewOutInner(outInnerWasPointer, outInnerType)
-		for j, csvColumnContent := range line {
-			fieldInfo := outInnerStructInfo.Fields[j]
-			if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
-				return &csv.ParseError{
-					Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
-					Column: j + 1,
-					Err:    err,
+		if r.From <= i && i <= r.To {
+			outInner := createNewOutInner(outInnerWasPointer, outInnerType)
+			for j, csvColumnContent := range line {
+				fieldInfo := outInnerStructInfo.Fields[j]
+				if err := setInnerField(&outInner, outInnerWasPointer, fieldInfo.IndexChain, csvColumnContent, fieldInfo.omitEmpty); err != nil { // Set field of struct
+					return &csv.ParseError{
+						Line:   i + 2, //add 2 to account for the header & 0-indexing of arrays
+						Column: j + 1,
+						Err:    err,
+					}
 				}
 			}
+			if r.OnRecord != nil {
+				outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
+			}
+			outValue.Send(outInner)
 		}
-		if r.OnRecord != nil {
-			outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
-		}
-		outValue.Send(outInner)
 		i++
 	}
 	return nil
@@ -313,6 +348,11 @@ func (r *XsvReader[T]) ReadToCallback(f func(s T) error) error {
 func (r *XsvReader[T]) ToMap() ([]map[string]string, error) {
 	var rows []map[string]string
 	var header []string
+	var i = 0
+
+	if err := r.checkFromTo(); err != nil {
+		return nil, err
+	}
 	for {
 		record, err := r.reader.Read()
 		if err == io.EOF {
@@ -324,22 +364,30 @@ func (r *XsvReader[T]) ToMap() ([]map[string]string, error) {
 		if header == nil {
 			header = record
 		} else {
-			dict := map[string]string{}
-			for i := range header {
-				dict[header[i]] = record[i]
+			if r.From <= i && i <= r.To {
+				dict := map[string]string{}
+				for i := range header {
+					dict[header[i]] = record[i]
+				}
+				if r.OnRecord != nil {
+					v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
+					dict = reflect.ValueOf(v).Interface().(map[string]string)
+				}
+				rows = append(rows, dict)
 			}
-			if r.OnRecord != nil {
-				v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
-				dict = reflect.ValueOf(v).Interface().(map[string]string)
-			}
-			rows = append(rows, dict)
 		}
+		i++
 	}
 	return rows, nil
 }
 
 func (r *XsvReader[T]) ToChanMaps(c chan<- map[string]string) error {
 	var header []string
+	var i = 0
+
+	if err := r.checkFromTo(); err != nil {
+		return err
+	}
 	for {
 		record, err := r.reader.Read()
 		if err == io.EOF {
@@ -351,16 +399,19 @@ func (r *XsvReader[T]) ToChanMaps(c chan<- map[string]string) error {
 		if header == nil {
 			header = record
 		} else {
-			dict := map[string]string{}
-			for i := range header {
-				dict[header[i]] = record[i]
+			if r.From <= i && i <= r.To {
+				dict := map[string]string{}
+				for i := range header {
+					dict[header[i]] = record[i]
+				}
+				if r.OnRecord != nil {
+					v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
+					dict = reflect.ValueOf(v).Interface().(map[string]string)
+				}
+				c <- dict
 			}
-			if r.OnRecord != nil {
-				v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
-				dict = reflect.ValueOf(v).Interface().(map[string]string)
-			}
-			c <- dict
 		}
+		i++
 	}
 	return nil
 }
