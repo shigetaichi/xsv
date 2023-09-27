@@ -393,6 +393,62 @@ aa,bb,11,cc,dd,ee`)
 	}
 }
 
+func Test_readEach_FromTo(t *testing.T) {
+	b := bytes.NewBufferString(`
+first,foo,BAR,Baz,last,abc
+aa,bb,11,cc,dd,ee
+ff,gg,22,hh,ii,jj
+kk,ll,33,mm,nn,oo
+`)
+
+	c := make(chan SkipFieldSample)
+	var samples []SkipFieldSample
+	go func() {
+		xsvRead := NewXsvRead[SkipFieldSample]()
+		xsvRead.From = 1
+		xsvRead.To = 2
+		if err := xsvRead.SetReader(csv.NewReader(b)).ReadEach(c); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	for v := range c {
+		samples = append(samples, v)
+	}
+	if len(samples) != 2 {
+		t.Fatalf("expected 2 sample instances, got %d", len(samples))
+	}
+	expected := SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "aa",
+			Sample: Sample{
+				Foo: "bb",
+				Bar: 11,
+				Baz: "cc",
+			},
+			Quux: "dd",
+		},
+		Corge: "ee",
+	}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+	expected = SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "ff",
+			Sample: Sample{
+				Foo: "gg",
+				Bar: 22,
+				Baz: "hh",
+			},
+			Quux: "ii",
+		},
+		Corge: "jj",
+	}
+	if expected != samples[1] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
+	}
+}
+
 func Test_readEachWithoutHeaders(t *testing.T) {
 	blah := 0
 	sptr := ""
@@ -890,6 +946,43 @@ func TestCSVToMaps_OnRecord(t *testing.T) {
 	}
 	if firstRecord["Baz"] != "42" {
 		t.Fatal("Expected 42 got", firstRecord["Baz"])
+	}
+}
+
+func TestCSVToMaps_FromTo(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR,Baz
+4,Jose,42
+2,Daniel,21
+5,Vincent,84`)
+	xsvRead := NewXsvRead[interface{}]()
+	xsvRead.From = 2
+	xsvRead.To = 3
+	m, err := xsvRead.SetReader(csv.NewReader(b)).ToMap()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(m) != 2 {
+		t.Fatal("Expected 2 len, but", len(m))
+	}
+	firstRecord := m[0]
+	if firstRecord["foo"] != "2" {
+		t.Fatal("Expected 2 got", firstRecord["foo"])
+	}
+	if firstRecord["BAR"] != "Daniel" {
+		t.Fatal("Expected Daniel got", firstRecord["BAR"])
+	}
+	if firstRecord["Baz"] != "21" {
+		t.Fatal("Expected 21 got", firstRecord["Baz"])
+	}
+	secondRecord := m[1]
+	if secondRecord["foo"] != "5" {
+		t.Fatal("Expected 5 got", secondRecord["foo"])
+	}
+	if secondRecord["BAR"] != "Vincent" {
+		t.Fatal("Expected Vincent got", secondRecord["BAR"])
+	}
+	if secondRecord["Baz"] != "84" {
+		t.Fatal("Expected 84 got", secondRecord["Baz"])
 	}
 }
 
