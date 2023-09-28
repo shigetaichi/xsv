@@ -40,8 +40,28 @@ func NewXsvRead[T any]() *XsvRead[T] {
 	}
 }
 
+func (x *XsvRead[T]) checkFrom() (err error) {
+	if x.From >= 0 {
+		return nil
+	}
+	return errors.New(fmt.Sprintf("%s cannot be set to a negative value.", strconv.Quote("From")))
+}
+
+func (x *XsvRead[T]) checkTo() (err error) {
+	if x.To >= -1 {
+		return nil
+	}
+	return errors.New(fmt.Sprintf("%s cannot be set to a negative value other than -1.", strconv.Quote("To")))
+}
+
 func (x *XsvRead[T]) checkFromTo() (err error) {
-	if x.To < 0 {
+	if err := x.checkFrom(); err != nil {
+		return err
+	}
+	if err := x.checkTo(); err != nil {
+		return err
+	}
+	if x.To == -1 {
 		return nil
 	}
 	if x.From <= x.To {
