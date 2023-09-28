@@ -120,4 +120,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	// Read to struct slice
+	clientsFile2, err := os.Open("clients.csv")
+	if err != nil {
+		panic(err)
+	}
+
+	var readClients []*Client
+	xsvRead := xsv.NewXsvRead[*Client]()
+	xsvRead.From = 2
+	xsvRead.To = 4
+	if err := xsvRead.SetFileReader(clientsFile2).ReadTo(&readClients); err != nil {
+		panic(err)
+	}
+	for _, readClient := range readClients {
+		fmt.Println(*readClient)
+	}
 }
