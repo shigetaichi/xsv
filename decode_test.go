@@ -85,6 +85,21 @@ f,1,baz,,*string,*string`)
 	}
 }
 
+func Test_readTo_FromTo(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr,Omit
+f,1,baz,,*string,*string
+e,3,b,,,`)
+	var samples []Sample
+	xsvRead := NewXsvRead[Sample]()
+	xsvRead.To = 1
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 1 {
+		t.Fatalf("expected 1 sample instances, got %d", len(samples))
+	}
+}
+
 func Test_readToNormalized(t *testing.T) {
 
 	blah := 0
