@@ -120,6 +120,10 @@ func (r *XsvReader[T]) ReadTo(out *[]T) error {
 			outInner = reflectedObject.Elem()
 		}
 
+		if r.OnRecord != nil {
+			outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
+		}
+
 		outValue.Index(i).Set(outInner)
 	}
 	return nil
@@ -189,6 +193,9 @@ func (r *XsvReader[T]) ReadEach(c chan T) error {
 				}
 			}
 		}
+		if r.OnRecord != nil {
+			outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
+		}
 		outValue.Send(outInner)
 		i++
 	}
@@ -230,6 +237,9 @@ func (r *XsvReader[T]) ReadToWithoutHeaders(out *[]T) error {
 				}
 			}
 		}
+		if r.OnRecord != nil {
+			outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
+		}
 		outValue.Index(i).Set(outInner)
 	}
 
@@ -268,6 +278,9 @@ func (r *XsvReader[T]) ReadEachWithoutHeaders(c chan T) error {
 					Err:    err,
 				}
 			}
+		}
+		if r.OnRecord != nil {
+			outInner = reflect.ValueOf(r.OnRecord(outInner.Interface().(T)))
 		}
 		outValue.Send(outInner)
 		i++
@@ -315,6 +328,10 @@ func (r *XsvReader[T]) ToMap() ([]map[string]string, error) {
 			for i := range header {
 				dict[header[i]] = record[i]
 			}
+			if r.OnRecord != nil {
+				v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
+				dict = reflect.ValueOf(v).Interface().(map[string]string)
+			}
 			rows = append(rows, dict)
 		}
 	}
@@ -337,6 +354,10 @@ func (r *XsvReader[T]) ToChanMaps(c chan<- map[string]string) error {
 			dict := map[string]string{}
 			for i := range header {
 				dict[header[i]] = record[i]
+				if r.OnRecord != nil {
+					v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
+					dict = reflect.ValueOf(v).Interface().(map[string]string)
+				}
 			}
 			c <- dict
 		}
