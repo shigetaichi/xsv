@@ -9,11 +9,12 @@ import (
 
 // XsvRead manages configuration values related to the csv read process.
 type XsvRead[T any] struct {
-	TagName                                         string //key in the struct field's tag to scan
-	TagSeparator                                    string //separator string for multiple csv tags in struct fields
-	FailIfUnmatchedStructTags                       bool   // indicates whether it is considered an error when there is an unmatched struct tag.
-	FailIfDoubleHeaderNames                         bool   // indicates whether it is considered an error when a header name is repeated in the csv header.
-	ShouldAlignDuplicateHeadersWithStructFieldOrder bool   // indicates whether we should align duplicate CSV headers per their alignment in the struct definition.
+	TagName                                         string    //key in the struct field's tag to scan
+	TagSeparator                                    string    //separator string for multiple csv tags in struct fields
+	FailIfUnmatchedStructTags                       bool      // indicates whether it is considered an error when there is an unmatched struct tag.
+	FailIfDoubleHeaderNames                         bool      // indicates whether it is considered an error when a header name is repeated in the csv header.
+	ShouldAlignDuplicateHeadersWithStructFieldOrder bool      // indicates whether we should align duplicate CSV headers per their alignment in the struct definition.
+	OnRecord                                        func(T) T // callback function to be called on each record
 	NameNormalizer                                  Normalizer
 	ErrorHandler                                    ErrorHandler
 }
@@ -26,6 +27,7 @@ func NewXsvRead[T any]() *XsvRead[T] {
 		FailIfUnmatchedStructTags: false,
 		FailIfDoubleHeaderNames:   false,
 		ShouldAlignDuplicateHeadersWithStructFieldOrder: false,
+		OnRecord:       nil,
 		NameNormalizer: func(s string) string { return s },
 		ErrorHandler:   nil,
 	}

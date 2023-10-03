@@ -59,6 +59,32 @@ e,BAD_INPUT,b`)
 
 }
 
+func Test_readTo_OnRecord(t *testing.T) {
+	blah := 0
+	sptr := "*string"
+	b := bytes.NewBufferString(`foo,BAR,Baz,Blah,SPtr,Omit
+f,1,baz,,*string,*string`)
+	var samples []Sample
+	xsvRead := NewXsvRead[Sample]()
+	xsvRead.OnRecord = func(sample Sample) Sample {
+		if sample.Foo == "f" {
+			sample.Foo = "f-onrecord"
+		}
+		return sample
+	}
+	if err := xsvRead.SetReader(csv.NewReader(b)).ReadTo(&samples); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(samples) != 1 {
+		t.Fatalf("expected 1 sample instances, got %d", len(samples))
+	}
+	expected := Sample{Foo: "f-onrecord", Bar: 1, Baz: "baz", Blah: &blah, SPtr: &sptr, Omit: &sptr}
+	if !reflect.DeepEqual(expected, samples[0]) {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
+	}
+}
+
 func Test_readToNormalized(t *testing.T) {
 
 	blah := 0
@@ -324,6 +350,46 @@ ff,gg,22,hh,ii,jj`)
 	}
 	if expected != samples[1] {
 		t.Fatalf("expected first sample %v, got %v", expected, samples[1])
+	}
+}
+
+func Test_readEach_OnRecord(t *testing.T) {
+	b := bytes.NewBufferString(`first,foo,BAR,Baz,last,abc
+aa,bb,11,cc,dd,ee`)
+	c := make(chan SkipFieldSample)
+	var samples []SkipFieldSample
+	xsvRead := NewXsvRead[SkipFieldSample]()
+	go func() {
+		xsvRead.OnRecord = func(sample SkipFieldSample) SkipFieldSample {
+			if sample.Foo == "bb" {
+				sample.Foo = "bb-onrecord"
+			}
+			return sample
+		}
+		if err := xsvRead.SetReader(csv.NewReader(b)).ReadEach(c); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	for v := range c {
+		samples = append(samples, v)
+	}
+	if len(samples) != 1 {
+		t.Fatalf("expected 1 sample instances, got %d", len(samples))
+	}
+	expected := SkipFieldSample{
+		EmbedSample: EmbedSample{
+			Qux: "aa",
+			Sample: Sample{
+				Foo: "bb-onrecord",
+				Bar: 11,
+				Baz: "cc",
+			},
+			Quux: "dd",
+		},
+		Corge: "ee",
+	}
+	if expected != samples[0] {
+		t.Fatalf("expected first sample %v, got %v", expected, samples[0])
 	}
 }
 
@@ -794,6 +860,36 @@ func TestCSVToMaps(t *testing.T) {
 	}
 	if thirdRecord["Baz"] != "84" {
 		t.Fatal("Expected 84 got", thirdRecord["Baz"])
+	}
+}
+
+func TestCSVToMaps_OnRecord(t *testing.T) {
+	b := bytes.NewBufferString(`foo,BAR,Baz
+4,Jose,42`)
+	xsvRead := NewXsvRead[map[string]string]()
+	xsvRead.OnRecord = func(record map[string]string) map[string]string {
+		r2 := make(map[string]string, len(record))
+		for k, v := range record {
+			r2[k] = v
+		}
+		if r2["foo"] == "4" {
+			r2["foo"] = "4-onrecord-to-maps"
+		}
+		return r2
+	}
+	m, err := xsvRead.SetReader(csv.NewReader(b)).ToMap()
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstRecord := m[0]
+	if firstRecord["foo"] != "4-onrecord-to-maps" {
+		t.Fatal("Expected 4-onrecord-to-maps got", firstRecord["foo"])
+	}
+	if firstRecord["BAR"] != "Jose" {
+		t.Fatal("Expected Jose got", firstRecord["BAR"])
+	}
+	if firstRecord["Baz"] != "42" {
+		t.Fatal("Expected 42 got", firstRecord["Baz"])
 	}
 }
 
