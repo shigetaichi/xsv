@@ -354,10 +354,10 @@ func (r *XsvReader[T]) ToChanMaps(c chan<- map[string]string) error {
 			dict := map[string]string{}
 			for i := range header {
 				dict[header[i]] = record[i]
-				if r.OnRecord != nil {
-					v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
-					dict = reflect.ValueOf(v).Interface().(map[string]string)
-				}
+			}
+			if r.OnRecord != nil {
+				v := r.OnRecord(reflect.ValueOf(dict).Interface().(T))
+				dict = reflect.ValueOf(v).Interface().(map[string]string)
 			}
 			c <- dict
 		}
