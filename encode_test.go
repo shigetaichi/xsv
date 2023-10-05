@@ -61,12 +61,9 @@ func Test_writeTo_OnRecord(t *testing.T) {
 	}
 
 	xsvWrite := NewXsvWrite[Sample]()
-	xsvWrite.OnRecord = func(s Sample, i *int) Sample {
+	xsvWrite.OnRecord = func(s Sample) Sample {
 		s.Foo = strings.ToUpper(s.Foo)
 		s.Baz = strings.ToUpper(s.Baz)
-		if i != nil {
-			s.Bar += *i + 1
-		}
 		return s
 	}
 	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
@@ -81,8 +78,8 @@ func Test_writeTo_OnRecord(t *testing.T) {
 		t.Fatalf("expected 3 lines, got %d", len(lines))
 	}
 	assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, lines[0])
-	assertLine(t, []string{"F", "2", "BAZ", "0.1", "2", "*string", ""}, lines[1])
-	assertLine(t, []string{"E", "4", "B", "0.46153846153846156", "", "", ""}, lines[2])
+	assertLine(t, []string{"F", "1", "BAZ", "0.1", "2", "*string", ""}, lines[1])
+	assertLine(t, []string{"E", "3", "B", "0.46153846153846156", "", "", ""}, lines[2])
 }
 
 func Test_writeTo_Time(t *testing.T) {
@@ -519,7 +516,7 @@ func Test_writeToChan_OnRecord(t *testing.T) {
 		close(sampleChan)
 	}()
 
-	xsvWrite.OnRecord = func(s Sample, i *int) Sample {
+	xsvWrite.OnRecord = func(s Sample) Sample {
 		s.Foo = strings.ToUpper(s.Foo)
 		s.Baz = strings.ToUpper(s.Baz)
 		return s

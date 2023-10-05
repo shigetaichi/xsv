@@ -57,7 +57,7 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 	for i := 0; i < inLen; i++ { // Iterate over container rows
 		inValueByIndex := inValue.Index(i)
 		if xw.OnRecord != nil {
-			inValueByIndex = reflect.ValueOf(xw.OnRecord(inValue.Index(i).Interface().(T), &i))
+			inValueByIndex = reflect.ValueOf(xw.OnRecord(inValue.Index(i).Interface().(T)))
 		}
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
@@ -109,7 +109,7 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 	}
 	write := func(val reflect.Value) error {
 		if xw.OnRecord != nil {
-			val = reflect.ValueOf(xw.OnRecord(val.Interface().(T), nil))
+			val = reflect.ValueOf(xw.OnRecord(val.Interface().(T)))
 		}
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
