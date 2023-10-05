@@ -17,6 +17,7 @@ type XsvWrite[T any] struct {
 	SelectedColumns []string          // slice of field names to output
 	SortOrder       []int             // column sort order
 	HeaderModifier  map[string]string // map to dynamically change headers
+	OnRecord        func(T, *int) T   // callback function to be called on each record, the int is the index of the record, but i can be nil when executing the writeFromChan function
 	nameNormalizer  Normalizer
 }
 
@@ -29,6 +30,7 @@ func NewXsvWrite[T any]() XsvWrite[T] {
 		SelectedColumns: make([]string, 0),
 		SortOrder:       make([]int, 0),
 		HeaderModifier:  map[string]string{},
+		OnRecord:        nil,
 		nameNormalizer:  func(s string) string { return s },
 	}
 }
