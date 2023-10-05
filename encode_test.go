@@ -50,6 +50,38 @@ func Test_writeTo(t *testing.T) {
 	assertLine(t, []string{"e", "3", "b", "0.46153846153846156", "", "", ""}, lines[2])
 }
 
+func Test_writeTo_OnRecord(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	blah := 2
+	sptr := "*string"
+	s := []Sample{
+		{Foo: "f", Bar: 1, Baz: "baz", Frop: 0.1, Blah: &blah, SPtr: &sptr},
+		{Foo: "e", Bar: 3, Baz: "b", Frop: 6.0 / 13, Blah: nil, SPtr: nil},
+	}
+
+	xsvWrite := NewXsvWrite[Sample]()
+	xsvWrite.OnRecord = func(s Sample) Sample {
+		s.Foo = strings.ToUpper(s.Foo)
+		s.Baz = strings.ToUpper(s.Baz)
+		return s
+	}
+	if err := xsvWrite.SetWriter(csv.NewWriter(e.out)).Write(s); err != nil {
+		t.Fatal(err)
+	}
+
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 3 {
+		t.Fatalf("expected 3 lines, got %d", len(lines))
+	}
+	assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, lines[0])
+	assertLine(t, []string{"F", "1", "BAZ", "0.1", "2", "*string", ""}, lines[1])
+	assertLine(t, []string{"E", "3", "B", "0.46153846153846156", "", "", ""}, lines[2])
+}
+
 func Test_writeTo_Time(t *testing.T) {
 	b := bytes.Buffer{}
 	e := &encoder{out: &b}
@@ -467,6 +499,45 @@ func Test_writeToChan(t *testing.T) {
 			continue
 		}
 		assertLine(t, []string{"f", strconv.Itoa(i - 1), "baz" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), "", "*string", ""}, l)
+	}
+}
+
+func Test_writeToChan_OnRecord(t *testing.T) {
+	b := bytes.Buffer{}
+	e := &encoder{out: &b}
+	xsvWrite := NewXsvWrite[Sample]()
+	sampleChan := make(chan Sample)
+	sptr := "*string"
+	go func() {
+		for i := 0; i < 100; i++ {
+			v := Sample{Foo: "f", Bar: i, Baz: "baz" + strconv.Itoa(i), Frop: float64(i), Blah: nil, SPtr: &sptr}
+			sampleChan <- v
+		}
+		close(sampleChan)
+	}()
+
+	xsvWrite.OnRecord = func(s Sample) Sample {
+		s.Foo = strings.ToUpper(s.Foo)
+		s.Baz = strings.ToUpper(s.Baz)
+		return s
+	}
+	err := xsvWrite.SetWriter(csv.NewWriter(e.out)).WriteFromChan(sampleChan)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines, err := csv.NewReader(&b).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 101 {
+		t.Fatalf("expected 100 lines, got %d", len(lines))
+	}
+	for i, l := range lines {
+		if i == 0 {
+			assertLine(t, []string{"foo", "BAR", "Baz", "Quux", "Blah", "SPtr", "Omit"}, l)
+			continue
+		}
+		assertLine(t, []string{"F", strconv.Itoa(i - 1), "BAZ" + strconv.Itoa(i-1), strconv.FormatFloat(float64(i-1), 'f', -1, 64), "", "*string", ""}, l)
 	}
 }
 
