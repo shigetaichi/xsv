@@ -55,9 +55,13 @@ func (xw *XsvWriter[T]) Write(data []T) error {
 	}
 	inLen := inValue.Len()
 	for i := 0; i < inLen; i++ { // Iterate over container rows
+		inValueByIndex := inValue.Index(i)
+		if xw.OnRecord != nil {
+			inValueByIndex = reflect.ValueOf(xw.OnRecord(inValue.Index(i).Interface().(T), &i))
+		}
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
-			inInnerFieldValue, err := getInnerField(inValue.Index(i), inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
+			inInnerFieldValue, err := getInnerField(inValueByIndex, inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
 			if err != nil {
 				return err
 			}
@@ -104,6 +108,9 @@ func (xw *XsvWriter[T]) WriteFromChan(dataChan chan T) error {
 		}
 	}
 	write := func(val reflect.Value) error {
+		if xw.OnRecord != nil {
+			val = reflect.ValueOf(xw.OnRecord(val.Interface().(T), nil))
+		}
 		for j, fieldInfo := range inInnerStructInfo.Fields {
 			csvHeadersLabels[j] = ""
 			inInnerFieldValue, err := getInnerField(val, inInnerWasPointer, fieldInfo.IndexChain) // Get the correct field header <-> position
