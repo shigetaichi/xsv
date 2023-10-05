@@ -79,23 +79,35 @@ func main() {
 ## 🛠️Details
 
 ### XsvWrite
-
-| FieldName       | Type              | Description                                                   |
-|-----------------|-------------------|---------------------------------------------------------------|
-| TagName         | string            | key in the struct field's tag to scan                         |
-| TagSeparator    | string            | separator string for multiple csv tags in struct fields       |
-| OmitHeaders     | bool              | whether to output headers to csv or not                       |
-| SelectedColumns | []string          | slice of field names(which is set in "TagName" tag) to output |
-| SortOrder       | []uint            | column sort order                                             |
-| HeaderModifier  | map[string]string | map to dynamically change headers                             |
+- **TagName**: `string`
+    - Key in the struct field's tag to scan
+- **TagSeparator**: `string`
+    - Separator string for multiple CSV tags in struct fields
+- **OmitHeaders**: `bool`
+    - Whether to output headers to CSV or not
+- **SelectedColumns**: `[]string`
+    - Slice of field names (which is set in "TagName" tag) to output
+- **SortOrder**: `[]uint`
+    - Column sort order
+- **HeaderModifier**: `map[string]string`
+    - Map to dynamically change headers
+- **OnRecord** `func(T) T`
+    - Callback function to be called on each record
 
 ### XsvRead
-
-| FieldName                                       | Type                            | Description                                                                                                                                                                                                                                                      |
-|-------------------------------------------------|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| TagName                                         | string                          | key in the struct field's tag to scan                                                                                                                                                                                                                            |
-| TagSeparator                                    | string                          | separator string for multiple csv tags in struct fields                                                                                                                                                                                                          |
-| FailIfUnmatchedStructTags                       | bool                            | indicates whether it is considered an error when there is an unmatched struct tag.                                                                                                                                                                               |
-| FailIfDoubleHeaderNames                         | bool                            | indicates whether it is considered an error when a header name is repeated in the csv header.                                                                                                                                                                    |
-| ShouldAlignDuplicateHeadersWithStructFieldOrder | bool                            | indicates whether we should align duplicate CSV headers per their alignment in the struct definition.                                                                                                                                                            |
-| NameNormalizer                                  | Normalizer(func(string) string) | Normalizer is a function that takes and returns a string. It is applied to struct and header field values before they are compared. It can be used to alter names for comparison. For instance, you could allow case insensitive matching or convert '-' to '_'. |
+- **TagName**: `string`
+    - Key in the struct field's tag to scan
+- **TagSeparator**: `string`
+    - Separator string for multiple CSV tags in struct fields
+- **FailIfUnmatchedStructTags**: `bool`
+    - Indicates whether it is considered an error when there is an unmatched struct tag.
+- **FailIfDoubleHeaderNames**: `bool`
+    - Indicates whether it is considered an error when a header name is repeated in the CSV header.
+- **ShouldAlignDuplicateHeadersWithStructFieldOrder**: `bool`
+    - Indicates whether duplicate CSV headers should be aligned per their order in the struct definition.
+- **OnRecord** `func(T) T`
+    - Callback function to be called on each record
+- **NameNormalizer**: `Normalizer(func(string) string)`
+    - Normalizer is a function that takes and returns a string. It is applied to struct and header field values before they are compared. It can be used to alter names for comparison. For instance, you could allow case-insensitive matching or convert '-' to '_'.
+- **ErrorHandler**: `ErrorHandler(func(*csv.ParseError) bool)`
+    - ErrorHandler is a function that takes an error and handles it. It can be used to log errors or to panic.
