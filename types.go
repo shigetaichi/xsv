@@ -80,9 +80,9 @@ func toString(in interface{}) (string, error) {
 		}
 		return "false", nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return fmt.Sprintf("%v", inValue.Int()), nil
+		return strconv.FormatInt(inValue.Int(), 10), nil
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return fmt.Sprintf("%v", inValue.Uint()), nil
+		return strconv.FormatUint(inValue.Uint(), 10), nil
 	case reflect.Float32:
 		return strconv.FormatFloat(inValue.Float(), byte('f'), -1, 32), nil
 	case reflect.Float64:
