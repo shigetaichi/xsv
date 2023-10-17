@@ -217,10 +217,12 @@ func toFloat(in interface{}) (float64, error) {
 
 func setField(field reflect.Value, value string, omitEmpty bool) error {
 	if field.Kind() == reflect.Ptr {
-		if omitEmpty && value == "" {
-			return nil
-		}
 		if field.IsNil() {
+			if omitEmpty && value == "" {
+				if field.Type().Elem().Kind() != reflect.Struct {
+					return nil
+				}
+			}
 			field.Set(reflect.New(field.Type().Elem()))
 		}
 		field = field.Elem()

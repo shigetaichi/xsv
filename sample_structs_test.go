@@ -15,6 +15,12 @@ type Sample struct {
 	Omit *string `csv:"Omit,omitempty"`
 }
 
+type AllOmitEmpty struct {
+	Omit  *string `csv:"Omit,omitempty"`
+	Omit2 *string `csv:"Omit2,omitempty"`
+	Omit3 *string `csv:"Omit3,omitempty"`
+}
+
 type SliceSample struct {
 	Slice []int `csv:"Slice"`
 }
@@ -96,6 +102,14 @@ type EmbedUnmarshalCSVWithClashingField struct {
 type EmbedPtrSample struct {
 	Qux string `csv:"first"`
 	*Sample
+	Ignore string  `csv:"-"`
+	Grault float64 `csv:"garply"`
+	Quux   string  `csv:"last"`
+}
+
+type EmbedPtrAllOmitemptySample struct {
+	Qux string `csv:"first"`
+	*AllOmitEmpty
 	Ignore string  `csv:"-"`
 	Grault float64 `csv:"garply"`
 	Quux   string  `csv:"last"`
