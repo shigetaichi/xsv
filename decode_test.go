@@ -223,6 +223,26 @@ ff,gg,22,hh,ii,jj`)
 	}
 }
 
+func Test_readTo_embed_ptr_all_omitempty(t *testing.T) {
+	b := bytes.NewBufferString(`first,last,abc,Omit
+aa,dd,ee,`)
+
+	var rows []EmbedPtrAllOmitemptySample
+	if err := NewXsvRead[EmbedPtrAllOmitemptySample]().SetReader(csv.NewReader(b)).ReadTo(&rows); err != nil {
+		t.Fatalf(err.Error())
+	}
+	expected := EmbedPtrAllOmitemptySample{
+		Qux: "aa",
+		AllOmitEmpty: &AllOmitEmpty{
+			Omit: nil,
+		},
+		Quux: "dd",
+	}
+	if !reflect.DeepEqual(expected, rows[0]) {
+		t.Fatalf("expected first sample %v, got %+v", expected, rows[0])
+	}
+}
+
 func Test_readTo_slice(t *testing.T) {
 	b := bytes.NewBufferString(`Slice
 []
