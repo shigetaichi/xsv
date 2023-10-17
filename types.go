@@ -335,19 +335,13 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 				return "false", nil
 			}
 		case int, int8, int16, int32, int64:
-			return fmt.Sprintf("%v", field.Int()), nil
+			return strconv.FormatInt(field.Int(), 10), nil
 		case uint, uint8, uint16, uint32, uint64:
-			return fmt.Sprintf("%v", field.Uint()), nil
+			return strconv.FormatUint(field.Uint(), 10), nil
 		case float32:
-			str, err = toString(float32(field.Float()))
-			if err != nil {
-				return str, err
-			}
+			return strconv.FormatFloat(field.Float(), 'f', -1, 32), nil
 		case float64:
-			str, err = toString(field.Float())
-			if err != nil {
-				return str, err
-			}
+			return strconv.FormatFloat(field.Float(), 'f', -1, 64), nil
 		default:
 			// Not a native type, check for marshal method
 			str, err = marshall(field)
@@ -365,25 +359,13 @@ func getFieldAsString(field reflect.Value) (str string, err error) {
 						return str, err
 					}
 				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					str, err = toString(field.Int())
-					if err != nil {
-						return str, err
-					}
+					return strconv.FormatInt(field.Int(), 10), nil
 				case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					str, err = toString(field.Uint())
-					if err != nil {
-						return str, err
-					}
+					return strconv.FormatUint(field.Uint(), 10), nil
 				case reflect.Float32:
-					str, err = toString(float32(field.Float()))
-					if err != nil {
-						return str, err
-					}
+					return strconv.FormatFloat(field.Float(), 'f', -1, 32), nil
 				case reflect.Float64:
-					str, err = toString(field.Float())
-					if err != nil {
-						return str, err
-					}
+					return strconv.FormatFloat(field.Float(), 'f', -1, 64), nil
 				case reflect.Slice:
 					fallthrough
 				case reflect.Array:
