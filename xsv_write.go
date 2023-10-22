@@ -18,6 +18,8 @@ type XsvWrite[T any] struct {
 	SortOrder       []int             // column sort order
 	HeaderModifier  map[string]string // map to dynamically change headers
 	OnRecord        func(T) T         // callback function to be called on each record
+	Comma           rune
+	UseCRLF         bool
 	nameNormalizer  Normalizer
 }
 
@@ -31,6 +33,8 @@ func NewXsvWrite[T any]() XsvWrite[T] {
 		SortOrder:       make([]int, 0),
 		HeaderModifier:  map[string]string{},
 		OnRecord:        nil,
+		Comma:           ',',
+		UseCRLF:         false,
 		nameNormalizer:  func(s string) string { return s },
 	}
 }
@@ -61,15 +65,15 @@ func (x *XsvWrite[T]) getSelectedFieldInfos(fieldInfos []fieldInfo) []fieldInfo 
 func (x *XsvWrite[T]) SetWriter(writer *csv.Writer) (xw *XsvWriter[T]) {
 	xw = NewXsvWriter(*x)
 	xw.writer = writer
-	return xw
+	return xw.Comma(x.Comma).UseCRLF(x.UseCRLF)
 }
 
 func (x *XsvWrite[T]) SetFileWriter(file *os.File) (xw *XsvWriter[T]) {
 	xw = x.SetWriter(csv.NewWriter(file))
-	return xw
+	return xw.Comma(x.Comma).UseCRLF(x.UseCRLF)
 }
 
 func (x *XsvWrite[T]) SetBufferWriter(buffer *bytes.Buffer) (xw *XsvWriter[T]) {
 	xw = x.SetWriter(csv.NewWriter(buffer))
-	return xw
+	return xw.Comma(x.Comma).UseCRLF(x.UseCRLF)
 }
